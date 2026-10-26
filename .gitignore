@@ -1,0 +1,31 @@
+# Build
+build/
+build-*/
+
+# Qt Creator
+*.user
+*.user.*
+*.pro.user
+*.qbs.user
+*.qbs.user.*
+.qtcreator/
+
+# CMake / Make
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Objetos y binarios
+*.o
+*.obj
+*.exe
+*.out
+*.app
+datasetDesarrollo/
+datasset/
+
+
+# OS
+.DS_Store
+Thumbs.db
