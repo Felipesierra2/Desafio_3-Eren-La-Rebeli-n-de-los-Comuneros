@@ -9,7 +9,8 @@ Juego::Juego(QWidget *parent)
     : QGraphicsView(parent),
     escena(new QGraphicsScene(this)),
     jugador(new Jugador()),
-    temporizador(new QTimer(this))
+    temporizador(new QTimer(this)),
+    plataformas(new QGraphicsRectItem*[1])
 {
     setWindowTitle("Mi juego 2D");
     setFixedSize(816, 639);
@@ -23,6 +24,11 @@ Juego::Juego(QWidget *parent)
     escena->addRect(0, 560, 800, 40,
                     QPen(Qt::NoPen),
                     QBrush(QColor(65, 145, 90)));
+    plataformas[0] = escena->addRect(
+        300, 500, 180, 20,
+        QPen(Qt::NoPen),
+        QBrush(QColor(180, 130, 80))
+        );
 
     escena->addItem(jugador);
     jugador->setPos(100,560-45);
@@ -109,10 +115,10 @@ void Juego::actualizarJuego()
     if (derechaPresionada)
         direccionHorizontal += 1;
 
+    jugador->establecerPlataformas(plataformas, cantidadPlataformas);
     jugador->mover2D(
         direccionHorizontal * velocidadHorizontal * deltaTiempo,
         0
         );
-
     jugador->actualizarMovimiento(deltaTiempo);
 }

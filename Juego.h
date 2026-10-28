@@ -5,6 +5,7 @@
 #include <QElapsedTimer>
 
 
+class QGraphicsRectItem;
 class QGraphicsScene;
 class QKeyEvent;
 class QTimer;
@@ -27,8 +28,11 @@ private:
 
     QElapsedTimer reloj;
     QGraphicsScene *escena;
+    QGraphicsRectItem **plataformas;
     Jugador *jugador;
     QTimer *temporizador;
+
+    int cantidadPlataformas = 1;
 };
 
 #endif // JUEGO_H
