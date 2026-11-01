@@ -2,28 +2,57 @@
 #define JUGADOR_H
 
 #include <QGraphicsRectItem>
+#include <vector>
+
+enum EstadoJugador {
+    QUIETO,
+    CAMINANDO,
+    SALTANDO,
+    CAYENDO
+};
 
 class Jugador : public QGraphicsRectItem
 {
 private:
-    qreal velocidadYInicial = -300;
     const qreal GRAVEDAD = 500;
+    qreal velocidadYInicial = -300;
     qreal yInicial = 0;
     qreal tiempo = 0;
-    bool saltando = false;
-
-    QGraphicsRectItem **plataformas = nullptr;
     QGraphicsRectItem *plataformaActual = nullptr;
-    int cantidadPlataformas = 0;
-    bool enSuelo = true;
+    QGraphicsRectItem *visualAtaque = nullptr;
+    QRectF calcularAreaAtaque() const;
+
+    std::vector<QGraphicsRectItem*> plataformas;
+    std::vector<QGraphicsRectItem*> columnas;
+
+    EstadoJugador estadoActual = QUIETO;
+
+    bool mirandoDerecha = true;
+    bool comprobarAterrizaje(
+        const std::vector<QGraphicsRectItem*>& superficies,
+        qreal yAnterior,
+        qreal& yFinal
+        );
+    bool estaEnElAire() const;
+    bool estaEnElSuelo() const;
+
+    bool hayImpacto(QGraphicsItem *objetivo) const;
+    bool atacando = false;
+    qreal tiempoAtaque = 0;
+    const qreal DURACION_ATAQUE = 0.15;
+
+    void actualizarCaida(qreal deltaTiempo);
+    void cambiarEstado(EstadoJugador nuevoEstado);
 public:
     explicit Jugador(QGraphicsItem *parent = nullptr);
 
     void saltar();
     void actualizarMovimiento(qreal deltaTiempo);
-    void mover2D(qreal desplazamientoX, qreal desplazamientoY);
-
-    void establecerPlataformas(QGraphicsRectItem **plataformas,int cantidadPlataformas);
+    void movimientoHorizontal(qreal desplazamientoX);
+    void establecerPlataformas(const std::vector<QGraphicsRectItem*>& plataformas);
+    void establecerColumnas(const std::vector<QGraphicsRectItem*>& columnas);
+    void atacar();
+    void actualizarAtaque(qreal deltaTiempo);
 
 protected:
 };

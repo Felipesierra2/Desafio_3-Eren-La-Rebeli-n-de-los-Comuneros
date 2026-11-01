@@ -3,6 +3,7 @@
 
 #include <QGraphicsView>
 #include <QElapsedTimer>
+#include <vector>
 
 
 class QGraphicsRectItem;
@@ -28,11 +29,10 @@ private:
 
     QElapsedTimer reloj;
     QGraphicsScene *escena;
-    QGraphicsRectItem **plataformas;
+    std::vector<QGraphicsRectItem*> plataformas;
+    std::vector<QGraphicsRectItem*> columnas;
     Jugador *jugador;
     QTimer *temporizador;
-
-    int cantidadPlataformas = 1;
 };
 
 #endif // JUEGO_H
