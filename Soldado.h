@@ -1,10 +1,15 @@
 #ifndef SOLDADO_H
 #define SOLDADO_H
 
-class Soldado
+#include "EntidadJuego.h"
+
+class Soldado : public EntidadJuego
 {
 public:
     Soldado();
+
+private:
+    static constexpr int VIDA_INICIAL = 3;
 };
 
 #endif // SOLDADO_H

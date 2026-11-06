@@ -11,6 +11,7 @@ class QGraphicsScene;
 class QKeyEvent;
 class QTimer;
 class Jugador;
+class Soldado;
 
 class Juego : public QGraphicsView
 {
@@ -32,6 +33,7 @@ private:
     std::vector<QGraphicsRectItem*> plataformas;
     std::vector<QGraphicsRectItem*> columnas;
     Jugador *jugador;
+    QVector<Soldado*> soldados;
     QTimer *temporizador;
 };
 

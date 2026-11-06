@@ -1,5 +1,6 @@
 #include "Juego.h"
 #include "Jugador.h"
+#include "Soldado.h"
 
 #include <QGraphicsScene>
 #include <QKeyEvent>
@@ -42,6 +43,14 @@ Juego::Juego(QWidget *parent)
     connect(temporizador, &QTimer::timeout,this,&Juego::actualizarJuego);
     reloj.start();
     temporizador->start(16);
+
+    Soldado* soldado = new Soldado();
+
+    soldado->setPos(600, 515);
+
+    scene()->addItem(soldado);
+
+    soldados.append(soldado);
 }
 
 void Juego::keyPressEvent(QKeyEvent *event)
