@@ -1,4 +1,5 @@
 #include "Jugador.h"
+#include "Soldado.h"
 
 #include <QBrush>
 #include <QColor>
@@ -47,26 +48,48 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX)
 
     qreal nuevaX = pos().x() + desplazamientoX;
 
-    QRectF limitesEren(
-        nuevaX,
-        pos().y(),
-        rect().width(),
-        rect().height()
-        );
+    QRectF limitesEren = sceneBoundingRect();
+    limitesEren.translate(desplazamientoX,0);
 
     for (QGraphicsRectItem* columna : columnas) {
         if (!columna)
             continue;
 
-        QRectF limitesColumna = columna->sceneBoundingRect();
-
-        if (limitesEren.intersects(limitesColumna)) {
+        if (limitesEren.intersects(columna->sceneBoundingRect())) {
             nuevaX = pos().x();
             break;
         }
     }
 
+    QList<QGraphicsItem*> posiblesColisiones = scene()->items(limitesEren, Qt::IntersectsItemBoundingRect);
+
+    QRectF limitesActuales = sceneBoundingRect();
+
+    for(QGraphicsItem* elemento:posiblesColisiones){
+
+        Soldado* soldado = dynamic_cast<Soldado*>(elemento);
+
+        if(!soldado)
+            continue;
+
+        QRectF limitesSoldado = soldado->sceneBoundingRect();
+
+        if(limitesEren.intersects(limitesSoldado)){
+
+            qreal distanciaActul = qAbs(limitesActuales.center().x() - limitesSoldado.center().x());
+
+            qreal distanciaNueva = qAbs(limitesEren.center().x() - limitesSoldado.center().x());
+
+            if(!limitesActuales.intersects(limitesSoldado) || distanciaNueva < distanciaActul){
+
+                nuevaX = pos().x();
+                break;
+            }
+        }
+    }
+
     const qreal maxX = limites.right() - rect().width();
+
     nuevaX = qBound(limites.left(), nuevaX, maxX);
 
     setX(nuevaX);
@@ -82,7 +105,6 @@ void Jugador::saltar()
 
     tiempo = 0;
     cambiarEstado(SALTANDO);
-
 }
 
 bool Jugador::estaEnElAire() const
@@ -147,6 +169,7 @@ void Jugador::actualizarCaida(qreal deltaTiempo)
 
         if (!comprobarAterrizaje(plataformas, yAnterior, yFinal))
             comprobarAterrizaje(columnas, yAnterior, yFinal);
+
     }
 
     const qreal sueloY = 560 - rect().height();
@@ -172,6 +195,9 @@ void Jugador::atacar()
         return;
 
     atacando = true;
+    tiempoAtaque = 0;
+
+    soldadosGolpeados.clear();
 }
 
 void Jugador::actualizarMovimiento(qreal deltaTiempo){
@@ -218,8 +244,7 @@ QRectF Jugador::calcularAreaAtaque() const
     else
         xAtaque = sceneBoundingRect().left() - anchoAtaque;
 
-    qreal yAtaque = sceneBoundingRect().center().y()
-                    - altoAtaque / 2;
+    qreal yAtaque = sceneBoundingRect().center().y() - altoAtaque / 2;
 
     return QRectF(xAtaque, yAtaque,
                   anchoAtaque, altoAtaque);
@@ -245,16 +270,31 @@ void Jugador::actualizarAtaque(qreal deltaTiempo)
 
     QRectF areaAtaque = calcularAreaAtaque();
 
+    QList<QGraphicsItem*> elementos = scene()->items(areaAtaque, Qt::IntersectsItemBoundingRect);
+
+    for(QGraphicsItem* elemento: elementos){
+
+        Soldado* soldado = dynamic_cast<Soldado*>(elemento);
+
+        if(!soldado)
+            continue;
+
+        if(soldadosGolpeados.contains(soldado))
+            continue;
+
+        qreal impulso = mirandoDerecha ? 300:-300;
+
+        soldado->recibirDano(1,impulso);
+
+        soldadosGolpeados.append(soldado);
+    }
+
     visualAtaque->setPos(
         mirandoDerecha ? rect().width() : -45,
         rect().height() / 2 - 35 / 2
         );
-    visualAtaque->setVisible(true);
 
-    qDebug() << "Ataque activo:"
-             << atacando
-             << "Estado:" << estadoActual
-             << "Posicion:" << visualAtaque->scenePos();
+    visualAtaque->setVisible(true);
 
     if (tiempoAtaque >= DURACION_ATAQUE) {
         atacando = false;

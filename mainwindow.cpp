@@ -15,18 +15,8 @@ MainWindow::MainWindow(QWidget *parent)
     juego = new Juego(central);
     juego->setMinimumSize(600,400);
 
-    // Crear un texto
-    texto = new QLabel("¡Hola! Estoy aprendiendo Qt.", central);
-
-    // Crear botones
-    boton = new QPushButton("Cambiar texto", central);
-    botonSalir = new QPushButton("Salir", central);
-
     // Organizar los componentes verticalmente
     QVBoxLayout *layout = new QVBoxLayout(central);
-    layout->addWidget(texto);
-    layout->addWidget(boton);
-    layout->addWidget(botonSalir);
 }
 
 MainWindow::~MainWindow()

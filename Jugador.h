@@ -3,6 +3,7 @@
 
 #include <QGraphicsRectItem>
 #include <vector>
+#include <QVector>
 
 enum EstadoJugador {
     QUIETO,
@@ -10,6 +11,8 @@ enum EstadoJugador {
     SALTANDO,
     CAYENDO
 };
+
+class Soldado;
 
 class Jugador : public QGraphicsRectItem
 {
@@ -21,6 +24,7 @@ private:
     QGraphicsRectItem *plataformaActual = nullptr;
     QGraphicsRectItem *visualAtaque = nullptr;
     QRectF calcularAreaAtaque() const;
+    QVector<Soldado*> soldadosGolpeados;
 
     std::vector<QGraphicsRectItem*> plataformas;
     std::vector<QGraphicsRectItem*> columnas;

@@ -1,5 +1,6 @@
 #include "EntidadJuego.h"
 #include <QtMath>
+#include <QDebug>
 
 EntidadJuego::EntidadJuego(const QRectF &rect, int vidaInicial,
                            QGraphicsItem *padre)
@@ -14,12 +15,16 @@ void EntidadJuego::recibirDano(int cantidad, qreal impulsoX)
     if (cantidad <= 0 || estaDerrotado())
         return;
 
+    qDebug() << "Vida antes:" << vida;
+
     vida -= cantidad;
 
     velocidadRetrocesoX = impulsoX;
 
     if (vida < 0)
         vida = 0;
+
+    qDebug() << "Vida despues:" << vida;
 }
 
 bool EntidadJuego::estaDerrotado() const

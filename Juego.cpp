@@ -5,6 +5,7 @@
 #include <QGraphicsScene>
 #include <QKeyEvent>
 #include <QTimer>
+#include <QtMath>
 
 Juego::Juego(QWidget *parent)
     : QGraphicsView(parent),
@@ -77,7 +78,8 @@ void Juego::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_Space:
-        jugador->atacar();
+        if (!event->isAutoRepeat())
+            jugador->atacar();
         break;
 
     default:
@@ -134,4 +136,10 @@ void Juego::actualizarJuego()
     jugador->establecerPlataformas(plataformas);
     jugador->movimientoHorizontal(direccionHorizontal * velocidadHorizontal * deltaTiempo);
     jugador->actualizarMovimiento(deltaTiempo);
+
+
+    for (Soldado* soldado : std::as_const(soldados))
+    {
+        soldado->actualizar(deltaTiempo);
+    }
 }
