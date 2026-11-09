@@ -22,6 +22,11 @@ protected:
     int vida;
     qreal velocidadRetrocesoX;
     static constexpr qreal FRICCION = 900.0;
+
+    int vidaMaxima;
+
+    QGraphicsRectItem* fondoVida;
+    QGraphicsRectItem* barraVida;
 };
 
 #endif // ENTIDADJUEGO_H

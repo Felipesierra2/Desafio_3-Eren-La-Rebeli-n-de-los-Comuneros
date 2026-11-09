@@ -29,14 +29,8 @@ Juego::Juego(QWidget *parent)
                                           QPen(Qt::NoPen),
                                           QBrush(QColor(180, 130, 80))));
 
-    columnas.push_back(escena->addRect(
-        500, 430, 30, 130,
-        QPen(Qt::NoPen),
-        QBrush(QColor(120, 120, 135))
-        ));
-
     escena->addItem(jugador);
-    jugador->setPos(100,560-45);
+    jugador->setPos(250,560-45);
 
     setFocusPolicy(Qt::StrongFocus);
     setFocus();
@@ -47,7 +41,7 @@ Juego::Juego(QWidget *parent)
 
     Soldado* soldado = new Soldado();
 
-    soldado->setPos(600, 515);
+    soldado->setPos(100, 515);
 
     scene()->addItem(soldado);
 
@@ -137,9 +131,42 @@ void Juego::actualizarJuego()
     jugador->movimientoHorizontal(direccionHorizontal * velocidadHorizontal * deltaTiempo);
     jugador->actualizarMovimiento(deltaTiempo);
 
-
     for (Soldado* soldado : std::as_const(soldados))
     {
-        soldado->actualizar(deltaTiempo);
+        QRectF limitesEren = jugador->sceneBoundingRect();
+        QRectF eren = jugador->sceneBoundingRect();
+        QRectF enemigo = soldado->sceneBoundingRect();
+
+        limitesEren.adjust(-4, -0, 4, 0);
+
+        qreal distanciaHorizontal = 0;
+
+        if (eren.right() < enemigo.left())
+            distanciaHorizontal = enemigo.left() - eren.right();
+        else if (enemigo.right() < eren.left())
+            distanciaHorizontal = eren.left() - enemigo.right();
+
+        bool superposicionVertical =
+            eren.bottom() > enemigo.top() &&
+            eren.top() < enemigo.bottom();
+    }
+
+    for (auto it = soldados.begin(); it != soldados.end(); ){
+        Soldado* soldado = *it;
+
+        if (soldado->estaDerrotado())
+        {
+            jugador->desaparecerSoldado(soldado);
+
+            scene()->removeItem(soldado);
+            delete soldado;
+
+            it = soldados.erase(it);
+        }
+        else
+        {
+            soldado->actualizar(deltaTiempo);
+            ++it;
+        }
     }
 }

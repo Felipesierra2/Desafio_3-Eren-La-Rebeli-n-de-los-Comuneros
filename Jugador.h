@@ -47,6 +47,12 @@ private:
 
     void actualizarCaida(qreal deltaTiempo);
     void cambiarEstado(EstadoJugador nuevoEstado);
+
+    int vida = 5;
+    static constexpr int VIDA_MAXIMA = 5;
+    bool invulnerable = false;
+    qreal tiempoInvulnerabilidad = 0;
+    static constexpr qreal DURACION_INVULNERABILIDAD = 1.0;
 public:
     explicit Jugador(QGraphicsItem *parent = nullptr);
 
@@ -57,6 +63,11 @@ public:
     void establecerColumnas(const std::vector<QGraphicsRectItem*>& columnas);
     void atacar();
     void actualizarAtaque(qreal deltaTiempo);
+
+    void desaparecerSoldado(Soldado* soldado);
+
+    void recibirDano(int cantidad);
+    int obtenerVida() const;
 
 protected:
 };

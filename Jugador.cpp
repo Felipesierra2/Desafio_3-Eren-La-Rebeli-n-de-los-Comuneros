@@ -204,6 +204,15 @@ void Jugador::actualizarMovimiento(qreal deltaTiempo){
     if (!scene())
         return;
 
+    if (invulnerable) {
+        tiempoInvulnerabilidad -= deltaTiempo;
+
+        if (tiempoInvulnerabilidad <= 0) {
+            tiempoInvulnerabilidad = 0;
+            invulnerable = false;
+        }
+    }
+
     if (estaEnElSuelo()) {
         if (plataformaActual != nullptr) {
             QRectF limitesPlataforma =
@@ -301,4 +310,30 @@ void Jugador::actualizarAtaque(qreal deltaTiempo)
         tiempoAtaque = 0;
         visualAtaque->setVisible(false);
     }
+}
+
+void Jugador::desaparecerSoldado(Soldado* soldado)
+{
+    soldadosGolpeados.removeAll(soldado);
+}
+
+void Jugador::recibirDano(int cantidad)
+{
+    if (cantidad <= 0 || vida <= 0 || invulnerable)
+        return;
+
+    vida -= cantidad;
+
+    if (vida < 0)
+        vida = 0;
+
+    invulnerable = true;
+    tiempoInvulnerabilidad = DURACION_INVULNERABILIDAD;
+
+    qDebug() << "Vida de Eren:" << vida;
+}
+
+int Jugador::obtenerVida() const
+{
+    return vida;
 }

@@ -1,13 +1,25 @@
 #include "EntidadJuego.h"
 #include <QtMath>
 #include <QDebug>
+#include <QBrush>
+#include <QPen>
 
 EntidadJuego::EntidadJuego(const QRectF &rect, int vidaInicial,
                            QGraphicsItem *padre)
     : QGraphicsRectItem(rect, padre),
     vida(vidaInicial),
-    velocidadRetrocesoX(0)
+    vidaMaxima(vidaInicial),
+    velocidadRetrocesoX(0),
+    fondoVida(nullptr),
+    barraVida(nullptr)
 {
+    fondoVida = new QGraphicsRectItem(0, -10, 35, 5, this);
+    fondoVida->setBrush(Qt::black);
+    fondoVida->setPen(Qt::NoPen);
+
+    barraVida = new QGraphicsRectItem(0, -10, 35, 5, this);
+    barraVida->setBrush(Qt::green);
+    barraVida->setPen(Qt::NoPen);
 }
 
 void EntidadJuego::recibirDano(int cantidad, qreal impulsoX)
@@ -23,6 +35,28 @@ void EntidadJuego::recibirDano(int cantidad, qreal impulsoX)
 
     if (vida < 0)
         vida = 0;
+
+    qreal porcentajeVida = static_cast<qreal>(vida) / vidaMaxima;
+
+    barraVida->setRect(
+        0, -10,
+        35 * porcentajeVida,
+        5
+        );
+
+    if (estaDerrotado()) {
+        setVisible(false);
+    }
+
+    if (porcentajeVida > 0.7) {
+        barraVida->setBrush(Qt::green);
+    }
+    else if (porcentajeVida > 0.4) {
+        barraVida->setBrush(Qt::yellow);
+    }
+    else {
+        barraVida->setBrush(Qt::red);
+    }
 
     qDebug() << "Vida despues:" << vida;
 }
