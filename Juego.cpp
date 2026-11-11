@@ -128,27 +128,27 @@ void Juego::actualizarJuego()
 
     jugador->establecerColumnas(columnas);
     jugador->establecerPlataformas(plataformas);
-    jugador->movimientoHorizontal(direccionHorizontal * velocidadHorizontal * deltaTiempo);
+    jugador->movimientoHorizontal(direccionHorizontal * velocidadHorizontal * deltaTiempo,
+                                  deltaTiempo);
     jugador->actualizarMovimiento(deltaTiempo);
 
     for (Soldado* soldado : std::as_const(soldados))
     {
+        soldado->actualizarEstado(deltaTiempo, jugador);
+
         QRectF limitesEren = jugador->sceneBoundingRect();
-        QRectF eren = jugador->sceneBoundingRect();
         QRectF enemigo = soldado->sceneBoundingRect();
 
-        limitesEren.adjust(-4, -0, 4, 0);
+        limitesEren.adjust(-4, 0, 4, 0);
 
-        qreal distanciaHorizontal = 0;
+        if (limitesEren.intersects(enemigo))
+        {
+            qreal direccionRetroceso =
+                jugador->sceneBoundingRect().center().x() <
+                        enemigo.center().x() ? -1 : 1;
 
-        if (eren.right() < enemigo.left())
-            distanciaHorizontal = enemigo.left() - eren.right();
-        else if (enemigo.right() < eren.left())
-            distanciaHorizontal = eren.left() - enemigo.right();
-
-        bool superposicionVertical =
-            eren.bottom() > enemigo.top() &&
-            eren.top() < enemigo.bottom();
+            jugador->recibirDano(1, direccionRetroceso);
+        }
     }
 
     for (auto it = soldados.begin(); it != soldados.end(); ){

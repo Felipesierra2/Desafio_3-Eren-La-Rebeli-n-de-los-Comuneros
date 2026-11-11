@@ -34,10 +34,21 @@ void Jugador::establecerColumnas(
     this->columnas = columnas;
 }
 
-void Jugador::movimientoHorizontal(qreal desplazamientoX)
+void Jugador::movimientoHorizontal(qreal desplazamientoX, qreal deltaTiempo)
 {
     if (!scene())
         return;
+
+    if (velocidadRetroceso != 0) {
+        desplazamientoX += velocidadRetroceso * deltaTiempo;
+
+        const qreal desaceleracion = 900;
+
+        if (velocidadRetroceso > 0)
+            velocidadRetroceso = qMax(0.0, velocidadRetroceso - desaceleracion * deltaTiempo);
+        else
+            velocidadRetroceso = qMin(0.0, velocidadRetroceso + desaceleracion * deltaTiempo);
+    }
 
     if (desplazamientoX > 0)
         mirandoDerecha = true;
@@ -317,7 +328,7 @@ void Jugador::desaparecerSoldado(Soldado* soldado)
     soldadosGolpeados.removeAll(soldado);
 }
 
-void Jugador::recibirDano(int cantidad)
+void Jugador::recibirDano(int cantidad, qreal direccion)
 {
     if (cantidad <= 0 || vida <= 0 || invulnerable)
         return;
@@ -329,6 +340,9 @@ void Jugador::recibirDano(int cantidad)
 
     invulnerable = true;
     tiempoInvulnerabilidad = DURACION_INVULNERABILIDAD;
+
+    const qreal FUERZA_RETROCESO = 350;
+    velocidadRetroceso = direccion * FUERZA_RETROCESO;
 
     qDebug() << "Vida de Eren:" << vida;
 }

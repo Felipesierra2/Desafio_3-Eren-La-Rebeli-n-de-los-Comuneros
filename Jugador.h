@@ -53,12 +53,13 @@ private:
     bool invulnerable = false;
     qreal tiempoInvulnerabilidad = 0;
     static constexpr qreal DURACION_INVULNERABILIDAD = 1.0;
+    qreal velocidadRetroceso = 0;
 public:
     explicit Jugador(QGraphicsItem *parent = nullptr);
 
     void saltar();
     void actualizarMovimiento(qreal deltaTiempo);
-    void movimientoHorizontal(qreal desplazamientoX);
+    void movimientoHorizontal(qreal desplazamientoX, qreal deltaTiempo);
     void establecerPlataformas(const std::vector<QGraphicsRectItem*>& plataformas);
     void establecerColumnas(const std::vector<QGraphicsRectItem*>& columnas);
     void atacar();
@@ -66,7 +67,7 @@ public:
 
     void desaparecerSoldado(Soldado* soldado);
 
-    void recibirDano(int cantidad);
+    void recibirDano(int cantidad, qreal direccion);
     int obtenerVida() const;
 
 protected:
