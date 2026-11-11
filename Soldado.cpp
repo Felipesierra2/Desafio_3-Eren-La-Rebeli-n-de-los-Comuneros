@@ -40,19 +40,41 @@ void Soldado::detectarJugador(const Jugador* jugador)
     jugadorDetectado = distancia <= rangoDeteccion;
 }
 
-void Soldado::actualizarEstado(qreal deltaTiempo, const Jugador* jugador)
+void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
 {
     if (!jugador || estaDerrotado())
         return;
 
     detectarJugador(jugador);
 
-    if (estado == EstadoSoldado::VIGILANDO)
+    if (estado == EstadoSoldado::VIGILANDO){
+        if(jugadorDetectado)
+            estado = EstadoSoldado::ALERTA;
+
         return;
+    }
 
     if (estado == EstadoSoldado::ALERTA) {
-        tiempoEstado = duracionAtaque;
-        estado = EstadoSoldado::ATACANDO;
+        if(!jugadorDetectado){
+            estado = EstadoSoldado::VIGILANDO;
+
+            return;
+        }
+
+        qreal distancia = qAbs(
+            sceneBoundingRect().center().x() -
+            jugador->sceneBoundingRect().center().x()
+            );
+
+        if (distancia <= rangoAtaque) {
+            tiempoEstado = duracionAtaque;
+            estado = EstadoSoldado::ATACANDO;
+            return;
+        }
+        else {
+            estado = EstadoSoldado::PERSIGUIENDO;
+        }
+
         return;
     }
 
@@ -60,8 +82,46 @@ void Soldado::actualizarEstado(qreal deltaTiempo, const Jugador* jugador)
         tiempoEstado -= deltaTiempo;
 
         if (tiempoEstado <= 0) {
+            QRectF limitesSoldado = sceneBoundingRect();
+            QRectF limitesEren = jugador->sceneBoundingRect();
+
+            qreal distanciaX = qAbs(limitesSoldado.center().x() - limitesEren.center().x());
+
+            bool estaAlAlcance =
+                distanciaX <= alcanceGolpe &&
+                limitesSoldado.top() < limitesEren.bottom() &&
+                limitesSoldado.bottom() > limitesEren.top();
+
+            if(estaAlAlcance){
+                qreal direccionRetroceso = limitesEren.center().x() >
+                                                   limitesSoldado.center().x() ? 1:-1;
+
+                jugador->recibirDano(1, direccionRetroceso);
+            }
+
             tiempoAtaque = tiempoEntreAtaques;
             estado = EstadoSoldado::RECUPERANDO;
+        }
+
+        return;
+    }
+
+    if (estado == EstadoSoldado::PERSIGUIENDO) {
+        if (!jugadorDetectado) {
+            estado = EstadoSoldado::VIGILANDO;
+            return;
+        }
+
+        qreal distancia = qAbs(
+            sceneBoundingRect().center().x() -
+            jugador->sceneBoundingRect().center().x()
+            );
+
+        if (distancia <= rangoAtaque) {
+            qDebug() << "Soldado entra en rango de ataque";
+
+            tiempoEstado = duracionAtaque;
+            estado = EstadoSoldado::ATACANDO;
         }
 
         return;
@@ -70,9 +130,14 @@ void Soldado::actualizarEstado(qreal deltaTiempo, const Jugador* jugador)
     if (estado == EstadoSoldado::RECUPERANDO) {
         tiempoAtaque -= deltaTiempo;
 
-        if (tiempoAtaque <= 0)
-            estado = EstadoSoldado::ALERTA;
+        if (tiempoAtaque <= 0){
+            if(jugadorDetectado)
+                estado = EstadoSoldado::ALERTA;
+            else
+                estado = EstadoSoldado::VIGILANDO;
+        }
     }
+
 }
 
 EstadoSoldado Soldado::obtenerEstado() const
@@ -83,4 +148,38 @@ EstadoSoldado Soldado::obtenerEstado() const
 TipoSoldado Soldado::obtenerTipo() const
 {
     return tipo;
+}
+
+qreal Soldado::obtenerDireccionJugador(const Jugador* jugador) const
+{
+    if (!jugador)
+        return 0;
+
+    qreal diferencia =
+        jugador->sceneBoundingRect().center().x() -
+        sceneBoundingRect().center().x();
+
+    if (diferencia > 0)
+        return 1;
+
+    if (diferencia < 0)
+        return -1;
+
+    return 0;
+}
+
+void Soldado::actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador){
+    if (!jugador || estaDerrotado())
+        return;
+
+    if (estado != EstadoSoldado::PERSIGUIENDO)
+        return;
+
+    const qreal velocidadPersecucion = 100;
+
+    qreal direccion = obtenerDireccionJugador(jugador);
+
+    qreal desplazamientoX = direccion * velocidadPersecucion * deltaTiempo;
+
+    moveBy(desplazamientoX, 0);
 }

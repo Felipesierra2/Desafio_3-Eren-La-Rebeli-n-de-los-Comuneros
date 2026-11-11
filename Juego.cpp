@@ -136,6 +136,8 @@ void Juego::actualizarJuego()
     {
         soldado->actualizarEstado(deltaTiempo, jugador);
 
+        soldado->actualizarPersecucion(deltaTiempo, jugador);
+
         QRectF limitesEren = jugador->sceneBoundingRect();
         QRectF enemigo = soldado->sceneBoundingRect();
 

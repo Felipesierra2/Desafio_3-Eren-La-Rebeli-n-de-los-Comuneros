@@ -13,7 +13,8 @@ enum class EstadoSoldado {
     VIGILANDO,
     ALERTA,
     ATACANDO,
-    RECUPERANDO
+    RECUPERANDO,
+    PERSIGUIENDO
 };
 
 class Soldado : public EntidadJuego
@@ -24,8 +25,9 @@ private:
     TipoSoldado tipo;
     EstadoSoldado estado = EstadoSoldado::VIGILANDO;
 
-    qreal rangoDeteccion;
-    qreal rangoAtaque;
+    qreal rangoDeteccion = 150;
+    qreal rangoAtaque = 55;
+    qreal alcanceGolpe = 65;
 
     qreal tiempoEntreAtaques;
     qreal tiempoAtaque = 0;
@@ -40,10 +42,13 @@ public:
     Soldado(TipoSoldado tipoSoldado);
 
     void detectarJugador(const Jugador* jugador);
-    void actualizarEstado(qreal deltaTiempo, const Jugador* jugador);
+    void actualizarEstado(qreal deltaTiempo, Jugador* jugador);
 
     EstadoSoldado obtenerEstado() const;
     TipoSoldado obtenerTipo() const;
+
+    qreal obtenerDireccionJugador(const Jugador* jugador) const;
+    void actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador);
 };
 
 #endif // SOLDADO_H
