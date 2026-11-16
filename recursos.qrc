@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/sprites">
+        <file>Momento_ll/sprites/Soldado.png</file>
+    </qresource>
+</RCC>

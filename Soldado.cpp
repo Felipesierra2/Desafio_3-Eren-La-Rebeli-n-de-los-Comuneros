@@ -1,10 +1,19 @@
 #include "Soldado.h"
 #include <QBrush>
+#include <QDebug>
+#include <qpainter.h>
+#include <QPainterPath>
 
 Soldado::Soldado()
     : EntidadJuego(QRectF(0,0,35,45), VIDA_INICIAL)
 {
     setBrush(Qt::green);
+    hojaSprites.load(":/sprites/Momento_ll/sprites/Soldado.png");
+
+    if (hojaSprites.isNull())
+        qDebug() << "Error al cargar los sprites del soldado";
+    else
+        qDebug() << "Sprites del soldado cargados correctamente";
 }
 
 Soldado::Soldado(TipoSoldado tipoSoldado)
@@ -182,4 +191,34 @@ void Soldado::actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador){
     qreal desplazamientoX = direccion * velocidadPersecucion * deltaTiempo;
 
     moveBy(desplazamientoX, 0);
+}
+
+void Soldado::paint(QPainter *painter,
+                    const QStyleOptionGraphicsItem *option,
+                    QWidget *widget)
+{
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+
+    if (hojaSprites.isNull())
+        return;
+
+    QRectF origen(0, 0, 256, 256);
+
+    QRectF destino(-10, -10, 100, 65);
+
+    painter->drawPixmap(destino, hojaSprites, origen);
+}
+
+QRectF Soldado::boundingRect() const
+{
+    return QRectF(-10, -10, 100, 65);
+}
+
+QPainterPath Soldado::shape() const
+{
+    QPainterPath camino;
+    camino.addRect(rect());
+
+    return camino;
 }

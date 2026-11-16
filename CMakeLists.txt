@@ -30,6 +30,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         Soldado.h Soldado.cpp
         README.md
         .gitignore
+        recursos.qrc
 
     )
 # Define target properties for Android with Qt 6 as:

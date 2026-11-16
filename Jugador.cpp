@@ -83,7 +83,7 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX, qreal deltaTiempo)
         if(!soldado)
             continue;
 
-        QRectF limitesSoldado = soldado->sceneBoundingRect();
+        QRectF limitesSoldado = soldado->mapRectToScene(soldado->rect());
 
         if(limitesEren.intersects(limitesSoldado)){
 
