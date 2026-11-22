@@ -31,6 +31,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         README.md
         .gitignore
         recursos.qrc
+        Proyectil.h Proyectil.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

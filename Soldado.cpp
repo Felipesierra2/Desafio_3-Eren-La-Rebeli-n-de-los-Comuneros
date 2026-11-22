@@ -54,6 +54,13 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
     if (!jugador || estaDerrotado())
         return;
 
+    qreal nuevaDireccion = obtenerDireccionJugador(jugador);
+
+    if (nuevaDireccion != 0 && nuevaDireccion != direccionVisual){
+        direccionVisual = nuevaDireccion;
+        update();
+    }
+
     detectarJugador(jugador);
 
     if (estado == EstadoSoldado::VIGILANDO){
@@ -91,21 +98,9 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
         tiempoEstado -= deltaTiempo;
 
         if (tiempoEstado <= 0) {
-            QRectF limitesSoldado = sceneBoundingRect();
-            QRectF limitesEren = jugador->sceneBoundingRect();
 
-            qreal distanciaX = qAbs(limitesSoldado.center().x() - limitesEren.center().x());
-
-            bool estaAlAlcance =
-                distanciaX <= alcanceGolpe &&
-                limitesSoldado.top() < limitesEren.bottom() &&
-                limitesSoldado.bottom() > limitesEren.top();
-
-            if(estaAlAlcance){
-                qreal direccionRetroceso = limitesEren.center().x() >
-                                                   limitesSoldado.center().x() ? 1:-1;
-
-                jugador->recibirDano(1, direccionRetroceso);
+            if (tipo == TipoSoldado::CUERPO_A_CUERPO) {
+                atacarCuerpoACuerpo(jugador);
             }
 
             tiempoAtaque = tiempoEntreAtaques;
@@ -149,6 +144,71 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
 
 }
 
+void Soldado::actualizarAnimacion(qreal deltaTiempo)
+{
+    if (recibiendoDano) {
+        tiempoReaccionDano -= deltaTiempo;
+
+        if (tiempoReaccionDano <= 0) {
+            tiempoReaccionDano = 0;
+            recibiendoDano = false;
+        }
+    }
+
+    int nuevaFila = 0;
+
+    if (estado == EstadoSoldado::PERSIGUIENDO)
+        nuevaFila = 1;
+
+    else if (estado == EstadoSoldado::ATACANDO)
+        nuevaFila = 2;
+
+    if (recibiendoDano)
+        nuevaFila = 3;
+
+    if (nuevaFila != filaAnimacion) {
+        filaAnimacion = nuevaFila;
+        fotogramaActual = 0;
+        tiempoAnimacion = 0;
+    }
+
+    qreal duracionActual = duracionFotograma;
+
+    bool animacionAtaque =
+        estado == EstadoSoldado::ATACANDO && !recibiendoDano;
+
+    if (animacionAtaque)
+        duracionActual = duracionFotogramaAtaque;
+
+    tiempoAnimacion += deltaTiempo;
+
+    if (tiempoAnimacion >= duracionActual) {
+        tiempoAnimacion -= duracionActual;
+
+        if (animacionAtaque) {
+            if (fotogramaActual < 3)
+                fotogramaActual++;
+        }
+        else {
+            fotogramaActual = (fotogramaActual + 1) % 4;
+        }
+    }
+
+    // if (estado == EstadoSoldado::ATACANDO && !recibiendoDano)
+    //     fotogramaActual = 0;
+
+    static int ultimoFotograma = -1;
+
+    if (fotogramaActual != ultimoFotograma) {
+        qDebug() << "Fila:" << filaAnimacion
+                 << "Columna:" << fotogramaActual;
+
+        ultimoFotograma = fotogramaActual;
+    }
+
+    update();
+}
+
 EstadoSoldado Soldado::obtenerEstado() const
 {
     return estado;
@@ -159,6 +219,48 @@ TipoSoldado Soldado::obtenerTipo() const
     return tipo;
 }
 
+void Soldado::recibirDano(int cantidad, qreal impulsoX)
+{
+
+    if (cantidad <= 0 || estaDerrotado())
+        return;
+
+    EntidadJuego::recibirDano(cantidad, impulsoX);
+
+    if (estaDerrotado())
+        return;
+
+    recibiendoDano = true;
+    tiempoReaccionDano = 0.25;
+}
+
+void Soldado::atacarCuerpoACuerpo(Jugador *jugador)
+{
+    if (!jugador)
+        return;
+
+    QRectF limitesSoldado = sceneBoundingRect();
+    QRectF limitesEren = jugador->sceneBoundingRect();
+
+    qreal distanciaX = qAbs(
+        limitesSoldado.center().x() -
+        limitesEren.center().x()
+        );
+
+    bool estaAlAlcance =
+        distanciaX <= alcanceGolpe &&
+        limitesSoldado.top() < limitesEren.bottom() &&
+        limitesSoldado.bottom() > limitesEren.top();
+
+    if (estaAlAlcance) {
+        qreal direccionRetroceso =
+            limitesEren.center().x() >
+                    limitesSoldado.center().x() ? 1 : -1;
+
+        jugador->recibirDano(1, direccionRetroceso);
+    }
+}
+
 qreal Soldado::obtenerDireccionJugador(const Jugador* jugador) const
 {
     if (!jugador)
@@ -166,7 +268,7 @@ qreal Soldado::obtenerDireccionJugador(const Jugador* jugador) const
 
     qreal diferencia =
         jugador->sceneBoundingRect().center().x() -
-        sceneBoundingRect().center().x();
+        mapRectToScene(rect()).center().x();
 
     if (diferencia > 0)
         return 1;
@@ -203,16 +305,38 @@ void Soldado::paint(QPainter *painter,
     if (hojaSprites.isNull())
         return;
 
-    QRectF origen(0, 0, 256, 256);
+    static bool fotogramasGuardados = false;
+
+    QRectF origen(
+        fotogramaActual * 256,
+        filaAnimacion * 256,
+        256,
+        256
+        );
 
     QRectF destino(-10, -10, 100, 65);
 
+    painter->save();
+
+    if(direccionVisual < 0){
+        qreal centroX = rect().center().x();
+
+        painter->translate(2 * centroX, 0);
+        painter->scale(-1,1);
+    }
+
     painter->drawPixmap(destino, hojaSprites, origen);
+
+    painter->setPen(QPen(Qt::green, 1));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(destino);
+
+    painter->restore();
 }
 
 QRectF Soldado::boundingRect() const
 {
-    return QRectF(-10, -10, 100, 65);
+    return QRectF(-65, -10, 165, 65);
 }
 
 QPainterPath Soldado::shape() const

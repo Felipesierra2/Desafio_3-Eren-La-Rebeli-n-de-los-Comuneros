@@ -27,7 +27,7 @@ class Soldado : public EntidadJuego
 {
 private:
     QPixmap hojaSprites;
-    static constexpr int VIDA_INICIAL = 3;
+    static constexpr int VIDA_INICIAL = 5;
 
     TipoSoldado tipo;
     EstadoSoldado estado = EstadoSoldado::VIGILANDO;
@@ -42,10 +42,18 @@ private:
     qreal tiempoEstado = 0;
     qreal tiempoAnimacion = 0;
     qreal duracionFotograma = 0.12;
+    qreal direccionVisual = 1;
+    qreal duracionFotogramaAtaque = 0.1;
 
     int fotogramaActual = 0;
+    int filaAnimacion = 0;
 
     bool jugadorDetectado = false;
+    bool recibiendoDano = false;
+
+    qreal tiempoReaccionDano = 0;
+
+    void atacarCuerpoACuerpo(Jugador *jugador);
 
 public:
 
@@ -54,6 +62,8 @@ public:
 
     void detectarJugador(const Jugador* jugador);
     void actualizarEstado(qreal deltaTiempo, Jugador* jugador);
+    void actualizarAnimacion(qreal deltaTiempo);
+    void recibirDano(int cantidad, qreal impulsoX) override;
 
     EstadoSoldado obtenerEstado() const;
     TipoSoldado obtenerTipo() const;
