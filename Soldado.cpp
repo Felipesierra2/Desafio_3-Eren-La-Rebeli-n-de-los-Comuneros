@@ -1,20 +1,10 @@
 #include "Soldado.h"
+#include "Proyectil.h"
 #include <QBrush>
 #include <QDebug>
 #include <qpainter.h>
 #include <QPainterPath>
 
-Soldado::Soldado()
-    : EntidadJuego(QRectF(0,0,35,45), VIDA_INICIAL)
-{
-    setBrush(Qt::green);
-    hojaSprites.load(":/sprites/Momento_ll/sprites/Soldado.png");
-
-    if (hojaSprites.isNull())
-        qDebug() << "Error al cargar los sprites del soldado";
-    else
-        qDebug() << "Sprites del soldado cargados correctamente";
-}
 
 Soldado::Soldado(TipoSoldado tipoSoldado)
     : EntidadJuego(QRectF(0, 0, 35, 45), VIDA_INICIAL),
@@ -26,11 +16,26 @@ Soldado::Soldado(TipoSoldado tipoSoldado)
         rangoDeteccion = 250;
         rangoAtaque = 180;
         tiempoEntreAtaques = 2.5;
+
+        hojaSprites.load(":/sprites/Momento_ll/sprites/SoldadoDistancia.png");
+
+        bool imagenCargada =
+            hojaSprites.load(":/sprites/Momento_ll/sprites/SoldadoDistancia.png");
+
+        qDebug() << "Imagen cargada:" << imagenCargada;
+        qDebug() << "Dimensiones:" << hojaSprites.size();
     }
     else {
         rangoDeteccion = 150;
         rangoAtaque = 45;
         tiempoEntreAtaques = 1.2;
+
+        hojaSprites.load(":/sprites/Momento_ll/sprites/Soldado.png");
+
+        if (hojaSprites.isNull())
+            qDebug() << "Error al cargar los sprites del soldado";
+        else
+            qDebug() << "Sprites del soldado cargados correctamente";
     }
 }
 
@@ -55,6 +60,9 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
         return;
 
     qreal nuevaDireccion = obtenerDireccionJugador(jugador);
+
+    if (estado == EstadoSoldado::RETROCEDIENDO)
+        nuevaDireccion *= -1;
 
     if (nuevaDireccion != 0 && nuevaDireccion != direccionVisual){
         direccionVisual = nuevaDireccion;
@@ -82,6 +90,13 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
             jugador->sceneBoundingRect().center().x()
             );
 
+        if (tipo == TipoSoldado::DISTANCIA &&
+            distancia < distanciaMinima)
+        {
+            estado = EstadoSoldado::RETROCEDIENDO;
+            return;
+        }
+
         if (distancia <= rangoAtaque) {
             tiempoEstado = duracionAtaque;
             estado = EstadoSoldado::ATACANDO;
@@ -103,8 +118,27 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
                 atacarCuerpoACuerpo(jugador);
             }
 
+            else if (tipo == TipoSoldado::DISTANCIA) {
+                proyectilPendiente = atacarDistancia();
+            }
+
             tiempoAtaque = tiempoEntreAtaques;
             estado = EstadoSoldado::RECUPERANDO;
+        }
+
+        return;
+    }
+
+    if (estado == EstadoSoldado::RETROCEDIENDO)
+    {
+        qreal distancia = qAbs(
+            sceneBoundingRect().center().x() -
+            jugador->sceneBoundingRect().center().x()
+            );
+
+        if (distancia >= 130)
+        {
+            estado = EstadoSoldado::ALERTA;
         }
 
         return;
@@ -157,8 +191,10 @@ void Soldado::actualizarAnimacion(qreal deltaTiempo)
 
     int nuevaFila = 0;
 
-    if (estado == EstadoSoldado::PERSIGUIENDO)
+    if (estado == EstadoSoldado::PERSIGUIENDO ||
+        estado == EstadoSoldado::RETROCEDIENDO){
         nuevaFila = 1;
+    }
 
     else if (estado == EstadoSoldado::ATACANDO)
         nuevaFila = 2;
@@ -192,18 +228,6 @@ void Soldado::actualizarAnimacion(qreal deltaTiempo)
         else {
             fotogramaActual = (fotogramaActual + 1) % 4;
         }
-    }
-
-    // if (estado == EstadoSoldado::ATACANDO && !recibiendoDano)
-    //     fotogramaActual = 0;
-
-    static int ultimoFotograma = -1;
-
-    if (fotogramaActual != ultimoFotograma) {
-        qDebug() << "Fila:" << filaAnimacion
-                 << "Columna:" << fotogramaActual;
-
-        ultimoFotograma = fotogramaActual;
     }
 
     update();
@@ -261,6 +285,38 @@ void Soldado::atacarCuerpoACuerpo(Jugador *jugador)
     }
 }
 
+Proyectil* Soldado::atacarDistancia()
+{
+    if (tipo != TipoSoldado::DISTANCIA || estaDerrotado())
+        return nullptr;
+
+    Proyectil* proyectil = new Proyectil(direccionVisual);
+
+    QRectF limitesSoldado = sceneBoundingRect();
+
+    qreal posicionX;
+
+    if (direccionVisual > 0)
+        posicionX = limitesSoldado.right();
+    else
+        posicionX = limitesSoldado.left() - proyectil->rect().width();
+
+    qreal posicionY = limitesSoldado.center().y();
+
+    proyectil->setPos(posicionX, posicionY);
+
+    return proyectil;
+}
+
+Proyectil* Soldado::recogerProyectil()
+{
+    Proyectil* proyectil = proyectilPendiente;
+
+    proyectilPendiente = nullptr;
+
+    return proyectil;
+}
+
 qreal Soldado::obtenerDireccionJugador(const Jugador* jugador) const
 {
     if (!jugador)
@@ -283,14 +339,25 @@ void Soldado::actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador){
     if (!jugador || estaDerrotado())
         return;
 
-    if (estado != EstadoSoldado::PERSIGUIENDO)
-        return;
-
     const qreal velocidadPersecucion = 100;
+    const qreal velocidadRetirada = 180;
 
     qreal direccion = obtenerDireccionJugador(jugador);
 
-    qreal desplazamientoX = direccion * velocidadPersecucion * deltaTiempo;
+    if (estado == EstadoSoldado::RETROCEDIENDO)
+    {
+        qreal desplazamientoX =
+            -direccion * velocidadRetirada * deltaTiempo;
+
+        moveBy(desplazamientoX, 0);
+        return;
+    }
+
+    if (estado != EstadoSoldado::PERSIGUIENDO)
+        return;
+
+    qreal desplazamientoX =
+        direccion * velocidadPersecucion * deltaTiempo;
 
     moveBy(desplazamientoX, 0);
 }
@@ -304,8 +371,6 @@ void Soldado::paint(QPainter *painter,
 
     if (hojaSprites.isNull())
         return;
-
-    static bool fotogramasGuardados = false;
 
     QRectF origen(
         fotogramaActual * 256,
@@ -326,10 +391,6 @@ void Soldado::paint(QPainter *painter,
     }
 
     painter->drawPixmap(destino, hojaSprites, origen);
-
-    painter->setPen(QPen(Qt::green, 1));
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(destino);
 
     painter->restore();
 }

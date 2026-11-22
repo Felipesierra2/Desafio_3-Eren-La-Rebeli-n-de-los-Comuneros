@@ -1,5 +1,6 @@
 #include "Juego.h"
 #include "Jugador.h"
+#include "Proyectil.h"
 #include "Soldado.h"
 
 #include <QGraphicsScene>
@@ -25,9 +26,20 @@ Juego::Juego(QWidget *parent)
     escena->addRect(0, 560, 800, 40,
                     QPen(Qt::NoPen),
                     QBrush(QColor(65, 145, 90)));
-    plataformas.push_back(escena->addRect(300, 500, 180, 20,
+    plataformas.push_back(escena->addRect(400, 560-40, 180, 20,
                                           QPen(Qt::NoPen),
                                           QBrush(QColor(180, 130, 80))));
+
+    // QGraphicsRectItem* columnaPrueba =
+    //     new QGraphicsRectItem(0, 0, 40, 120);
+
+    // columnaPrueba->setBrush(QColor(120, 120, 120));
+    // columnaPrueba->setPen(Qt::NoPen);
+
+    // columnaPrueba->setPos(350, 440);
+
+    // escena->addItem(columnaPrueba);
+    // columnas.push_back(columnaPrueba);
 
     escena->addItem(jugador);
     jugador->setPos(250,560-45);
@@ -39,13 +51,21 @@ Juego::Juego(QWidget *parent)
     reloj.start();
     temporizador->start(16);
 
-    Soldado* soldado = new Soldado();
+    Soldado* soldado = new Soldado(TipoSoldado::DISTANCIA);
 
     soldado->setPos(100, 515);
 
     scene()->addItem(soldado);
 
     soldados.append(soldado);
+
+    Soldado* soldadoCuerpo = new Soldado(TipoSoldado::CUERPO_A_CUERPO);
+
+    soldadoCuerpo->setPos(400, 515);
+
+    scene()->addItem(soldadoCuerpo);
+
+    soldados.append(soldadoCuerpo);
 }
 
 void Juego::keyPressEvent(QKeyEvent *event)
@@ -136,12 +156,19 @@ void Juego::actualizarJuego()
     {
         soldado->actualizarEstado(deltaTiempo, jugador);
 
+        Proyectil* nuevoProyectil = soldado->recogerProyectil();
+
+        if (nuevoProyectil) {
+            escena->addItem(nuevoProyectil);
+            proyectiles.push_back(nuevoProyectil);
+        }
+
         soldado->actualizarPersecucion(deltaTiempo, jugador);
 
         soldado->actualizarAnimacion(deltaTiempo);
 
         QRectF limitesEren = jugador->sceneBoundingRect();
-        QRectF enemigo = soldado->mapRectFromScene(soldado->rect());
+        QRectF enemigo = soldado->mapRectToScene(soldado->rect());
 
         limitesEren.adjust(-4, 0, 4, 0);
 
@@ -170,6 +197,79 @@ void Juego::actualizarJuego()
         else
         {
             soldado->actualizar(deltaTiempo);
+            ++it;
+        }
+    }
+
+    for (auto it = proyectiles.begin(); it != proyectiles.end(); )
+    {
+        Proyectil* proyectil = *it;
+
+        proyectil->actualizar(deltaTiempo);
+
+        QRectF limitesProyectil = proyectil->sceneBoundingRect();
+
+        bool impactoObstaculo = false;
+
+        for (QGraphicsRectItem* columna : columnas)
+        {
+            if (columna &&
+                limitesProyectil.intersects(columna->sceneBoundingRect()))
+            {
+                impactoObstaculo = true;
+                break;
+            }
+        }
+
+        if (!impactoObstaculo)
+        {
+            for (QGraphicsRectItem* plataforma : plataformas)
+            {
+                if (plataforma &&
+                    limitesProyectil.intersects(plataforma->sceneBoundingRect()))
+                {
+                    impactoObstaculo = true;
+                    break;
+                }
+            }
+        }
+
+        if (impactoObstaculo)
+        {
+            escena->removeItem(proyectil);
+            delete proyectil;
+
+            it = proyectiles.erase(it);
+            continue;
+        }
+
+        QRectF limitesEscena = escena->sceneRect();
+
+        QRectF limitesEren = jugador->sceneBoundingRect();
+
+        if (limitesProyectil.intersects(limitesEren))
+        {
+            qreal direccionRetroceso =
+                proyectil->x() < limitesEren.center().x() ? 1 : -1;
+
+            jugador->recibirDano(1, direccionRetroceso);
+
+            escena->removeItem(proyectil);
+            delete proyectil;
+
+            it = proyectiles.erase(it);
+            continue;
+        }
+
+        if (limitesProyectil.right() < limitesEscena.left() ||
+            limitesProyectil.left() > limitesEscena.right())
+        {
+            escena->removeItem(proyectil);
+            delete proyectil;
+
+            it = proyectiles.erase(it);
+        }
+        else {
             ++it;
         }
     }

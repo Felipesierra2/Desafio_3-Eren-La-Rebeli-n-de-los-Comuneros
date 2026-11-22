@@ -16,12 +16,14 @@ enum class EstadoSoldado {
     ALERTA,
     ATACANDO,
     RECUPERANDO,
-    PERSIGUIENDO
+    PERSIGUIENDO,
+    RETROCEDIENDO
 };
 
 class QPainter;
 class QStyleOptionGraphicsItem;
 class QWidget;
+class Proyectil;
 
 class Soldado : public EntidadJuego
 {
@@ -44,6 +46,7 @@ private:
     qreal duracionFotograma = 0.12;
     qreal direccionVisual = 1;
     qreal duracionFotogramaAtaque = 0.1;
+    qreal distanciaMinima = 90;
 
     int fotogramaActual = 0;
     int filaAnimacion = 0;
@@ -53,11 +56,11 @@ private:
 
     qreal tiempoReaccionDano = 0;
 
+    Proyectil* proyectilPendiente = nullptr;
+
     void atacarCuerpoACuerpo(Jugador *jugador);
 
 public:
-
-    Soldado();
     Soldado(TipoSoldado tipoSoldado);
 
     void detectarJugador(const Jugador* jugador);
@@ -74,6 +77,9 @@ public:
 
     void actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador);
     void paint(QPainter *painter,const QStyleOptionGraphicsItem *option,QWidget *widget = nullptr) override;
+
+    Proyectil* atacarDistancia();
+    Proyectil* recogerProyectil();
 };
 
 #endif // SOLDADO_H

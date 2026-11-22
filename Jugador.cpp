@@ -302,6 +302,11 @@ void Jugador::actualizarAtaque(qreal deltaTiempo)
         if(soldadosGolpeados.contains(soldado))
             continue;
 
+        QRectF cuerpoSoldado = soldado->mapRectToScene(soldado->rect());
+
+        if (!areaAtaque.intersects(cuerpoSoldado))
+            continue;
+
         qreal impulso = mirandoDerecha ? 300:-300;
 
         soldado->recibirDano(1,impulso);

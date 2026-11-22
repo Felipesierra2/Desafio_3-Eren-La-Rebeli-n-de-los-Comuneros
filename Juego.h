@@ -12,6 +12,7 @@ class QKeyEvent;
 class QTimer;
 class Jugador;
 class Soldado;
+class Proyectil;
 
 class Juego : public QGraphicsView
 {
@@ -35,6 +36,7 @@ private:
     Jugador *jugador;
     QVector<Soldado*> soldados;
     QTimer *temporizador;
+    std::vector<Proyectil*> proyectiles;
 };
 
 #endif // JUEGO_H
