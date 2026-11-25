@@ -32,6 +32,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         .gitignore
         recursos.qrc
         Proyectil.h Proyectil.cpp
+        PlataformaMovil.h PlataformaMovil.cpp
 
 
     )

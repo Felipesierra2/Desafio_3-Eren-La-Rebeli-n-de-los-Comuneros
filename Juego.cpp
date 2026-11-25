@@ -29,17 +29,15 @@ Juego::Juego(QWidget *parent)
     plataformas.push_back(escena->addRect(400, 560-40, 180, 20,
                                           QPen(Qt::NoPen),
                                           QBrush(QColor(180, 130, 80))));
+    plataformaMovil = new PlataformaMovil(
+        250, 460,
+        120, 20,
+        60, 4
+        );
 
-    // QGraphicsRectItem* columnaPrueba =
-    //     new QGraphicsRectItem(0, 0, 40, 120);
+    escena->addItem(plataformaMovil);
 
-    // columnaPrueba->setBrush(QColor(120, 120, 120));
-    // columnaPrueba->setPen(Qt::NoPen);
-
-    // columnaPrueba->setPos(350, 440);
-
-    // escena->addItem(columnaPrueba);
-    // columnas.push_back(columnaPrueba);
+    plataformas.push_back(plataformaMovil);
 
     escena->addItem(jugador);
     jugador->setPos(250,560-45);
@@ -135,6 +133,9 @@ void Juego::actualizarJuego()
     qreal deltaTiempo = reloj.restart() / 1000.0;
 
     deltaTiempo = qMin(deltaTiempo, 0.05);
+
+    if (plataformaMovil)
+        plataformaMovil->actualizar(deltaTiempo);
 
     const qreal velocidadHorizontal = 250;
 

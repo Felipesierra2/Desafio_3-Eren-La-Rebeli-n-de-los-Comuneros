@@ -1,6 +1,7 @@
 #ifndef JUEGO_H
 #define JUEGO_H
 
+#include "PlataformaMovil.h"
 #include <QGraphicsView>
 #include <QElapsedTimer>
 #include <vector>
@@ -33,6 +34,7 @@ private:
     QGraphicsScene *escena;
     std::vector<QGraphicsRectItem*> plataformas;
     std::vector<QGraphicsRectItem*> columnas;
+    PlataformaMovil* plataformaMovil = nullptr;
     Jugador *jugador;
     QVector<Soldado*> soldados;
     QTimer *temporizador;

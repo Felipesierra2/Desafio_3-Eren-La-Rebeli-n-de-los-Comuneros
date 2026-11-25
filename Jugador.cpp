@@ -1,4 +1,5 @@
 #include "Jugador.h"
+#include "PlataformaMovil.h"
 #include "Soldado.h"
 
 #include <QBrush>
@@ -141,9 +142,17 @@ bool Jugador::comprobarAterrizaje(
 
         QRectF limites = superficie->sceneBoundingRect();
         qreal altura = limites.top();
+        qreal alturaAnterior = altura;
 
-        if (yAnterior + rect().height() <= altura &&
-            yFinal + rect().height() >= altura) {
+        PlataformaMovil* plataformaMovil =
+            dynamic_cast<PlataformaMovil*>(superficie);
+
+        if (plataformaMovil) {
+            alturaAnterior -= plataformaMovil->obtenerDesplazamientoY();
+        }
+
+        if (yAnterior + rect().height() <= alturaAnterior &&
+            yFinal + rect().height() >= altura){
 
             qreal izquierdaEren = pos().x();
             qreal derechaEren = izquierdaEren + rect().width();
@@ -239,6 +248,14 @@ void Jugador::actualizarMovimiento(qreal deltaTiempo){
                 velocidadYInicial = 0;
                 tiempo = 0;
                 cambiarEstado(CAYENDO);
+            }
+            else {
+                PlataformaMovil* plataformaMovil = dynamic_cast<PlataformaMovil*>(plataformaActual);
+
+                if (plataformaMovil) {
+                    setY(pos().y() +
+                         plataformaMovil->obtenerDesplazamientoY());
+                }
             }
         }
 
