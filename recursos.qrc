@@ -5,4 +5,7 @@
     <qresource prefix="/sprites">
         <file>Momento_ll/sprites/SoldadoDistancia.png</file>
     </qresource>
+    <qresource prefix="/sprites">
+        <file>Momento_ll/sprites/Eren.png</file>
+    </qresource>
 </RCC>

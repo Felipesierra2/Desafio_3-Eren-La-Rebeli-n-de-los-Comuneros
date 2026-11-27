@@ -137,7 +137,7 @@ void Juego::actualizarJuego()
     if (plataformaMovil)
         plataformaMovil->actualizar(deltaTiempo);
 
-    const qreal velocidadHorizontal = 250;
+    const qreal velocidadHorizontal = 180;
 
     qreal direccionHorizontal = 0;
 

@@ -21,9 +21,6 @@ Soldado::Soldado(TipoSoldado tipoSoldado)
 
         bool imagenCargada =
             hojaSprites.load(":/sprites/Momento_ll/sprites/SoldadoDistancia.png");
-
-        qDebug() << "Imagen cargada:" << imagenCargada;
-        qDebug() << "Dimensiones:" << hojaSprites.size();
     }
     else {
         rangoDeteccion = 150;

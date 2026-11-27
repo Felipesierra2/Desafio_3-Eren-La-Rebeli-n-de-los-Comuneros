@@ -4,6 +4,9 @@
 #include <QGraphicsRectItem>
 #include <vector>
 #include <QVector>
+#include <QPixmap>
+#include <QPainter>
+#include <QDebug>
 
 enum EstadoJugador {
     QUIETO,
@@ -12,11 +15,31 @@ enum EstadoJugador {
     CAYENDO
 };
 
+enum class AnimacionJugador {
+    REPOSO,
+    CORRER,
+    SALTO,
+    CAIDA,
+    ATAQUE,
+    ATAQUE_AEREO,
+    HERIDO,
+    MORIR
+};
+
 class Soldado;
 
-class Jugador : public QGraphicsRectItem
-{
+class Jugador : public QGraphicsRectItem {
 private:
+    QPixmap hojaSprites;
+
+    int fotogramaActual = 0;
+    qreal tiempoAnimacion = 0;
+
+    static constexpr int TAM_FOTOGRAMA = 256;
+    static constexpr int FOTOGRAMAS_POR_FILA = 4;
+    static constexpr qreal DURACION_REACCION_DANO = 0.70;
+    static constexpr qreal DURACION_FOTOGRAMA_MUERTE = 0.25;
+
     const qreal GRAVEDAD = 500;
     qreal velocidadYInicial = -300;
     qreal yInicial = 0;
@@ -30,6 +53,7 @@ private:
     std::vector<QGraphicsRectItem*> columnas;
 
     EstadoJugador estadoActual = QUIETO;
+    AnimacionJugador animacionActual = AnimacionJugador::REPOSO;
 
     bool mirandoDerecha = true;
     bool comprobarAterrizaje(
@@ -43,7 +67,9 @@ private:
     bool hayImpacto(QGraphicsItem *objetivo) const;
     bool atacando = false;
     qreal tiempoAtaque = 0;
-    const qreal DURACION_ATAQUE = 0.15;
+    static constexpr qreal DURACION_ATAQUE = 0.40;
+    static constexpr qreal INICIO_IMPACTO = 0.20;
+    static constexpr qreal FIN_IMPACTO = 0.30;
 
     void actualizarCaida(qreal deltaTiempo);
     void cambiarEstado(EstadoJugador nuevoEstado);
@@ -54,6 +80,14 @@ private:
     qreal tiempoInvulnerabilidad = 0;
     static constexpr qreal DURACION_INVULNERABILIDAD = 1.0;
     qreal velocidadRetroceso = 0;
+
+    void paint(
+        QPainter *painter,
+        const QStyleOptionGraphicsItem *option,
+        QWidget *widget
+        ) override;
+    void actualizarAnimacion(qreal deltaTiempo);
+
 public:
     explicit Jugador(QGraphicsItem *parent = nullptr);
 
@@ -69,8 +103,6 @@ public:
 
     void recibirDano(int cantidad, qreal direccion);
     int obtenerVida() const;
-
-protected:
 };
 
 

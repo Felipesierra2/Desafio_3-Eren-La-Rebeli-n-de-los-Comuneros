@@ -13,6 +13,12 @@ Jugador::Jugador(QGraphicsItem *parent)
     : QGraphicsRectItem(parent)
 {
     setRect(0, 0, 35, 45);
+
+    if (!hojaSprites.load(":/sprites/Momento_ll/sprites/Eren.png"))
+    {
+        qWarning() << "Error al cargar los sprites de Eren";
+    }
+
     setBrush(QBrush(QColor(80, 170, 255)));
     setPen(QPen(Qt::white, 2));
 
@@ -35,10 +41,19 @@ void Jugador::establecerColumnas(
     this->columnas = columnas;
 }
 
-void Jugador::movimientoHorizontal(qreal desplazamientoX, qreal deltaTiempo)
+void Jugador::movimientoHorizontal(qreal desplazamientoX,
+                                   qreal deltaTiempo)
 {
     if (!scene())
         return;
+
+    if (vida <= 0)
+        desplazamientoX = 0;
+
+    if (desplazamientoX > 0)
+        mirandoDerecha = true;
+    else if (desplazamientoX < 0)
+        mirandoDerecha = false;
 
     if (velocidadRetroceso != 0) {
         desplazamientoX += velocidadRetroceso * deltaTiempo;
@@ -46,15 +61,12 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX, qreal deltaTiempo)
         const qreal desaceleracion = 900;
 
         if (velocidadRetroceso > 0)
-            velocidadRetroceso = qMax(0.0, velocidadRetroceso - desaceleracion * deltaTiempo);
+            velocidadRetroceso = qMax(
+                0.0, velocidadRetroceso - desaceleracion * deltaTiempo);
         else
-            velocidadRetroceso = qMin(0.0, velocidadRetroceso + desaceleracion * deltaTiempo);
+            velocidadRetroceso = qMin(
+                0.0, velocidadRetroceso + desaceleracion * deltaTiempo);
     }
-
-    if (desplazamientoX > 0)
-        mirandoDerecha = true;
-    else if (desplazamientoX < 0)
-        mirandoDerecha = false;
 
     const QRectF limites = scene()->sceneRect();
 
@@ -109,7 +121,7 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX, qreal deltaTiempo)
 
 void Jugador::saltar()
 {
-    if (estaEnElAire() || !scene())
+    if (vida <= 0 || estaEnElAire() || !scene())
         return;
 
     yInicial = pos().y();
@@ -211,8 +223,15 @@ void Jugador::cambiarEstado(EstadoJugador nuevoEstado)
 
 void Jugador::atacar()
 {
-    if (atacando)
+    if (atacando || vida <= 0)
         return;
+
+    if (invulnerable &&
+        DURACION_INVULNERABILIDAD - tiempoInvulnerabilidad
+            < DURACION_REACCION_DANO)
+    {
+        return;
+    }
 
     atacando = true;
     tiempoAtaque = 0;
@@ -223,6 +242,8 @@ void Jugador::atacar()
 void Jugador::actualizarMovimiento(qreal deltaTiempo){
     if (!scene())
         return;
+
+    actualizarAnimacion(deltaTiempo);
 
     if (invulnerable) {
         tiempoInvulnerabilidad -= deltaTiempo;
@@ -305,6 +326,20 @@ void Jugador::actualizarAtaque(qreal deltaTiempo)
 
     tiempoAtaque += deltaTiempo;
 
+    if (tiempoAtaque >= DURACION_ATAQUE) {
+        atacando = false;
+        tiempoAtaque = 0;
+        visualAtaque->setVisible(false);
+        return;
+    }
+
+    if (tiempoAtaque < INICIO_IMPACTO ||
+        tiempoAtaque >= FIN_IMPACTO)
+    {
+        visualAtaque->setVisible(false);
+        return;
+    }
+
     QRectF areaAtaque = calcularAreaAtaque();
 
     QList<QGraphicsItem*> elementos = scene()->items(areaAtaque, Qt::IntersectsItemBoundingRect);
@@ -337,12 +372,6 @@ void Jugador::actualizarAtaque(qreal deltaTiempo)
         );
 
     visualAtaque->setVisible(true);
-
-    if (tiempoAtaque >= DURACION_ATAQUE) {
-        atacando = false;
-        tiempoAtaque = 0;
-        visualAtaque->setVisible(false);
-    }
 }
 
 void Jugador::desaparecerSoldado(Soldado* soldado)
@@ -361,6 +390,15 @@ void Jugador::recibirDano(int cantidad, qreal direccion)
         vida = 0;
 
     invulnerable = true;
+
+    if (atacando) {
+        qDebug() << "Ataque interrumpido por impacto";
+
+        atacando = false;
+        tiempoAtaque = 0;
+        visualAtaque->setVisible(false);
+    }
+
     tiempoInvulnerabilidad = DURACION_INVULNERABILIDAD;
 
     const qreal FUERZA_RETROCESO = 350;
@@ -372,4 +410,178 @@ void Jugador::recibirDano(int cantidad, qreal direccion)
 int Jugador::obtenerVida() const
 {
     return vida;
+}
+
+void Jugador::paint(
+    QPainter *painter,
+    const QStyleOptionGraphicsItem *option,
+    QWidget *widget)
+{
+    if (hojaSprites.isNull())
+    {
+        QGraphicsRectItem::paint(painter, option, widget);
+        return;
+    }
+
+    const QRect origen(
+        fotogramaActual * TAM_FOTOGRAMA,
+        static_cast<int>(animacionActual) * TAM_FOTOGRAMA,
+        TAM_FOTOGRAMA,
+        TAM_FOTOGRAMA
+        );
+
+    painter->save();
+
+    if (!mirandoDerecha) {
+        painter->translate(2 * rect().center().x(), 0);
+        painter->scale(-1, 1);
+    }
+
+    const qreal lado = qMin(rect().width(), rect().height());
+
+    const QRectF destino(
+        rect().center().x() - lado / 2,
+        rect().bottom() - lado,
+        lado,
+        lado
+        );
+
+    painter->drawPixmap(destino, hojaSprites, origen);
+
+    painter->restore();
+}
+
+void Jugador::actualizarAnimacion(qreal deltaTiempo)
+{
+    if (vida <= 0) {
+
+        if (animacionActual != AnimacionJugador::MORIR) {
+            animacionActual = AnimacionJugador::MORIR;
+            fotogramaActual = 0;
+            tiempoAnimacion = 0;
+            update();
+            return;
+        }
+
+        if (fotogramaActual == FOTOGRAMAS_POR_FILA - 1)
+            return;
+
+        tiempoAnimacion += deltaTiempo;
+
+        if (tiempoAnimacion >= DURACION_FOTOGRAMA_MUERTE) {
+            tiempoAnimacion -= DURACION_FOTOGRAMA_MUERTE;
+            ++fotogramaActual;
+            update();
+        }
+
+        return;
+    }
+
+    AnimacionJugador nuevaAnimacion = AnimacionJugador::REPOSO;
+
+    if (invulnerable && vida > 0) {
+        const qreal tiempoDesdeImpacto =
+            DURACION_INVULNERABILIDAD - tiempoInvulnerabilidad;
+
+        if (tiempoDesdeImpacto < DURACION_REACCION_DANO) {
+
+            const int nuevoFotograma = qMin(
+                static_cast<int>(
+                    tiempoDesdeImpacto /
+                    (DURACION_REACCION_DANO / FOTOGRAMAS_POR_FILA)
+                    ),
+                FOTOGRAMAS_POR_FILA - 1
+                );
+
+            if (animacionActual != AnimacionJugador::HERIDO ||
+                fotogramaActual != nuevoFotograma)
+            {
+                animacionActual = AnimacionJugador::HERIDO;
+                fotogramaActual = nuevoFotograma;
+                tiempoAnimacion = 0;
+                update();
+
+                qDebug() << "HERIDO - Fila:"
+                         << static_cast<int>(animacionActual)
+                         << "Fotograma:" << fotogramaActual
+                         << "Tiempo:" << tiempoDesdeImpacto;
+            }
+
+            return;
+        }
+    }
+
+    if (atacando) {
+        nuevaAnimacion = estaEnElAire()
+        ? AnimacionJugador::ATAQUE_AEREO
+        : AnimacionJugador::ATAQUE;
+
+        const int nuevoFotograma = qMin(
+            static_cast<int>(
+                tiempoAtaque /
+                (DURACION_ATAQUE / FOTOGRAMAS_POR_FILA)
+                ),
+            FOTOGRAMAS_POR_FILA - 1
+            );
+
+        if (animacionActual != nuevaAnimacion ||
+            fotogramaActual != nuevoFotograma)
+        {
+            animacionActual = nuevaAnimacion;
+            fotogramaActual = nuevoFotograma;
+            tiempoAnimacion = 0;
+            update();
+        }
+
+        return;
+    }
+
+    switch (estadoActual) {
+    case QUIETO:
+        nuevaAnimacion = AnimacionJugador::REPOSO;
+        break;
+
+    case CAMINANDO:
+        nuevaAnimacion = AnimacionJugador::CORRER;
+        break;
+
+    case SALTANDO:
+        nuevaAnimacion = AnimacionJugador::SALTO;
+        break;
+
+    case CAYENDO:
+        nuevaAnimacion = AnimacionJugador::CAIDA;
+        break;
+    }
+
+    if (nuevaAnimacion != animacionActual) {
+        animacionActual = nuevaAnimacion;
+        fotogramaActual = 0;
+        tiempoAnimacion = 0;
+        update();
+        return;
+    }
+
+    const bool animacionCiclica =
+        animacionActual == AnimacionJugador::REPOSO ||
+        animacionActual == AnimacionJugador::CORRER;
+
+    if (!animacionCiclica &&
+        fotogramaActual == FOTOGRAMAS_POR_FILA - 1)
+    {
+        return;
+    }
+
+    constexpr qreal DURACION_FOTOGRAMA = 0.25;
+
+    tiempoAnimacion += deltaTiempo;
+
+    if (tiempoAnimacion >= DURACION_FOTOGRAMA) {
+        tiempoAnimacion -= DURACION_FOTOGRAMA;
+
+        fotogramaActual =
+            (fotogramaActual + 1) % FOTOGRAMAS_POR_FILA;
+
+        update();
+    }
 }
