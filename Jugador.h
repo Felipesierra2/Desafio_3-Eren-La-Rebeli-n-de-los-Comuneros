@@ -49,18 +49,20 @@ private:
     QRectF calcularAreaAtaque() const;
     QVector<Soldado*> soldadosGolpeados;
 
-    std::vector<QGraphicsRectItem*> plataformas;
-    std::vector<QGraphicsRectItem*> columnas;
+    const std::vector<QGraphicsRectItem*>* plataformas = nullptr;
+    const std::vector<QGraphicsRectItem*>* columnas = nullptr;
 
     EstadoJugador estadoActual = QUIETO;
     AnimacionJugador animacionActual = AnimacionJugador::REPOSO;
 
     bool mirandoDerecha = true;
-    bool comprobarAterrizaje(
+    void buscarSuperficieAterrizaje(
         const std::vector<QGraphicsRectItem*>& superficies,
         qreal yAnterior,
-        qreal& yFinal
-        );
+        qreal yFinal,
+        QGraphicsRectItem*& mejorSuperficie,
+        qreal& menorFraccion) const;
+
     bool estaEnElAire() const;
     bool estaEnElSuelo() const;
 

@@ -119,8 +119,6 @@ void Juego::actualizarJuego()
     if (derechaPresionada)
         direccionHorizontal += 1;
 
-    jugador->establecerColumnas(columnas);
-    jugador->establecerPlataformas(plataformas);
     jugador->movimientoHorizontal(direccionHorizontal * velocidadHorizontal * deltaTiempo,
                                   deltaTiempo);
     jugador->actualizarMovimiento(deltaTiempo);
@@ -276,6 +274,9 @@ void Juego::construirNivel1()
 
     escena->addItem(jugador);
     jugador->setPos(50, ALTURA_PISO - 45);
+
+    jugador->establecerColumnas(columnas);
+    jugador->establecerPlataformas(plataformas);
 
     crearSoldado(
         TipoSoldado::CUERPO_A_CUERPO,

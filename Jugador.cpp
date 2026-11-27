@@ -30,15 +30,16 @@ Jugador::Jugador(QGraphicsItem *parent)
     visualAtaque->setVisible(false);
 }
 
-void Jugador::establecerPlataformas(const std::vector<QGraphicsRectItem *> &plataformas)
+void Jugador::establecerPlataformas(
+    const std::vector<QGraphicsRectItem*>& plataformas)
 {
-    this->plataformas = plataformas;
+    this->plataformas = &plataformas;
 }
 
 void Jugador::establecerColumnas(
     const std::vector<QGraphicsRectItem*>& columnas)
 {
-    this->columnas = columnas;
+    this->columnas = &columnas;
 }
 
 void Jugador::movimientoHorizontal(qreal desplazamientoX,
@@ -75,16 +76,21 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX,
     QRectF limitesEren = mapRectToScene(rect());
     limitesEren.translate(desplazamientoX,0);
 
-    for (QGraphicsRectItem* columna : columnas) {
-        if (!columna)
-            continue;
+    if (columnas)
+    {
+        for (QGraphicsRectItem* columna : *columnas)
+        {
+            if (!columna)
+                continue;
 
-        const QRectF limitesColumna =
-            columna->mapRectToScene(columna->rect());
+            const QRectF limitesColumna =
+                columna->mapRectToScene(columna->rect());
 
-        if (limitesEren.intersects(limitesColumna)) {
-            nuevaX = pos().x();
-            break;
+            if (limitesEren.intersects(limitesColumna))
+            {
+                nuevaX = pos().x();
+                break;
+            }
         }
     }
 
@@ -146,75 +152,104 @@ bool Jugador::estaEnElSuelo() const
            estadoActual == CAMINANDO;
 }
 
-bool Jugador::comprobarAterrizaje(
+void Jugador::buscarSuperficieAterrizaje(
     const std::vector<QGraphicsRectItem*>& superficies,
     qreal yAnterior,
-    qreal& yFinal)
+    qreal yFinal,
+    QGraphicsRectItem*& mejorSuperficie,
+    qreal& menorFraccion) const
 {
-    for (QGraphicsRectItem* superficie : superficies) {
+    const QRectF cuerpo = mapRectToScene(rect());
+
+    const qreal piesAnteriores = yAnterior + rect().height();
+    const qreal piesFinales = yFinal + rect().height();
+
+    for (QGraphicsRectItem* superficie : superficies)
+    {
         if (!superficie)
             continue;
 
         const QRectF limites =
             superficie->mapRectToScene(superficie->rect());
-        qreal altura = limites.top();
+
+        if (cuerpo.right() <= limites.left() ||
+            cuerpo.left() >= limites.right())
+        {
+            continue;
+        }
+
+        const qreal altura = limites.top();
         qreal alturaAnterior = altura;
 
-        PlataformaMovil* plataformaMovil =
-            dynamic_cast<PlataformaMovil*>(superficie);
+        const PlataformaMovil* movil =
+            dynamic_cast<const PlataformaMovil*>(superficie);
 
-        if (plataformaMovil) {
-            alturaAnterior -= plataformaMovil->obtenerDesplazamientoY();
-        }
+        if (movil)
+            alturaAnterior -= movil->obtenerDesplazamientoY();
 
-        if (yAnterior + rect().height() <= alturaAnterior &&
-            yFinal + rect().height() >= altura){
+        const qreal distanciaInicial =
+            alturaAnterior - piesAnteriores;
 
-            qreal izquierdaEren = pos().x();
-            qreal derechaEren = izquierdaEren + rect().width();
+        const qreal distanciaFinal =
+            altura - piesFinales;
 
-            if (derechaEren > limites.left() &&
-                izquierdaEren < limites.right()) {
+        if (distanciaInicial < 0 || distanciaFinal > 0)
+            continue;
 
-                yFinal = altura - rect().height();
-                tiempo = 0;
-                plataformaActual = superficie;
-                cambiarEstado(QUIETO);
+        const qreal recorridoRelativo = distanciaInicial - distanciaFinal;
 
-                return true;
-            }
+        if (recorridoRelativo <= 0)
+            continue;
+
+        const qreal fraccion =
+            distanciaInicial / recorridoRelativo;
+
+        if (fraccion < menorFraccion)
+        {
+            menorFraccion = fraccion;
+            mejorSuperficie = superficie;
         }
     }
-
-    return false;
 }
 
 void Jugador::actualizarCaida(qreal deltaTiempo)
 {
-
     tiempo += deltaTiempo;
 
-    qreal yAnterior = pos().y();
+    const qreal yAnterior = pos().y();
 
     qreal yFinal = yInicial
                    + velocidadYInicial * tiempo
                    + 0.5 * GRAVEDAD * tiempo * tiempo;
 
-    if (velocidadYInicial + GRAVEDAD * tiempo > 0) {
+    if (velocidadYInicial + GRAVEDAD * tiempo > 0)
+    {
         cambiarEstado(CAYENDO);
 
-        if (!comprobarAterrizaje(plataformas, yAnterior, yFinal))
-            comprobarAterrizaje(columnas, yAnterior, yFinal);
+        QGraphicsRectItem* mejorSuperficie = nullptr;
+        qreal menorFraccion = 2.0;
 
-    }
+        if (plataformas)
+            buscarSuperficieAterrizaje(
+                *plataformas, yAnterior, yFinal,
+                mejorSuperficie, menorFraccion);
 
-    const qreal sueloY = 560 - rect().height();
+        if (columnas)
+            buscarSuperficieAterrizaje(
+                *columnas, yAnterior, yFinal,
+                mejorSuperficie, menorFraccion);
 
-    if (yFinal >= sueloY) {
-        yFinal = sueloY;
-        tiempo = 0;
-        plataformaActual = nullptr;
-        cambiarEstado(QUIETO);
+        if (mejorSuperficie)
+        {
+            yFinal = mejorSuperficie
+                         ->mapRectToScene(mejorSuperficie->rect())
+                         .top() - rect().height();
+
+            tiempo = 0;
+            plataformaActual = mejorSuperficie;
+
+            cambiarEstado(QUIETO);
+        }
     }
 
     setY(yFinal);
