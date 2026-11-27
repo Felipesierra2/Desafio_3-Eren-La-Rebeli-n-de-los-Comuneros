@@ -12,7 +12,7 @@ Soldado::Soldado(TipoSoldado tipoSoldado)
 {
     setBrush(Qt::red);
 
-    if (tipo == TipoSoldado::DISTANCIA) {
+    if (tipo == TipoSoldado::DISTANCIA){
         rangoDeteccion = 250;
         rangoAtaque = 180;
         tiempoEntreAtaques = 2.5;
@@ -333,7 +333,7 @@ qreal Soldado::obtenerDireccionJugador(const Jugador* jugador) const
 }
 
 void Soldado::actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador){
-    if (!jugador || estaDerrotado())
+    if (!jugador || estaDerrotado() || estaEnRetroceso())
         return;
 
     const qreal velocidadPersecucion = 100;
@@ -346,7 +346,7 @@ void Soldado::actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador){
         qreal desplazamientoX =
             -direccion * velocidadRetirada * deltaTiempo;
 
-        moveBy(desplazamientoX, 0);
+        moverHorizontalSeguro(desplazamientoX);
         return;
     }
 
@@ -356,7 +356,7 @@ void Soldado::actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador){
     qreal desplazamientoX =
         direccion * velocidadPersecucion * deltaTiempo;
 
-    moveBy(desplazamientoX, 0);
+    moverHorizontalSeguro(desplazamientoX);
 }
 
 void Soldado::paint(QPainter *painter,

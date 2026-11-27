@@ -6,7 +6,7 @@
 #include <QElapsedTimer>
 #include <vector>
 
-
+enum class TipoSoldado;
 class QGraphicsRectItem;
 class QGraphicsScene;
 class QKeyEvent;
@@ -27,6 +27,15 @@ protected:
 private:
     void actualizarJuego();
 
+    void construirNivel1();
+    void actualizarCamara();
+    void crearSoldado(TipoSoldado tipo, qreal x, qreal y);
+    void crearPlataforma(qreal x, qreal y,
+                         qreal ancho, qreal alto);
+
+    void crearColumna(qreal x, qreal y,
+                      qreal ancho, qreal alto);
+
     bool izquierdaPresionada = false;
     bool derechaPresionada = false;
 
@@ -39,6 +48,11 @@ private:
     QVector<Soldado*> soldados;
     QTimer *temporizador;
     std::vector<Proyectil*> proyectiles;
+
+    static constexpr int ANCHO_VISTA = 800;
+    static constexpr int ALTO_VISTA = 600;
+    static constexpr int ANCHO_NIVEL1 = 3200;
+    static constexpr int ALTURA_PISO = 560;
 };
 
 #endif // JUEGO_H

@@ -40,8 +40,8 @@ private:
     static constexpr qreal DURACION_REACCION_DANO = 0.70;
     static constexpr qreal DURACION_FOTOGRAMA_MUERTE = 0.25;
 
-    const qreal GRAVEDAD = 500;
-    qreal velocidadYInicial = -300;
+    const qreal GRAVEDAD = 700;
+    qreal velocidadYInicial = -280;
     qreal yInicial = 0;
     qreal tiempo = 0;
     QGraphicsRectItem *plataformaActual = nullptr;
@@ -67,7 +67,7 @@ private:
     bool hayImpacto(QGraphicsItem *objetivo) const;
     bool atacando = false;
     qreal tiempoAtaque = 0;
-    static constexpr qreal DURACION_ATAQUE = 0.40;
+    static constexpr qreal DURACION_ATAQUE = 0.30;
     static constexpr qreal INICIO_IMPACTO = 0.20;
     static constexpr qreal FIN_IMPACTO = 0.30;
 

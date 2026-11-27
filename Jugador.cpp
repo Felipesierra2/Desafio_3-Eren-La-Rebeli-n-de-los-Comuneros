@@ -72,14 +72,17 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX,
 
     qreal nuevaX = pos().x() + desplazamientoX;
 
-    QRectF limitesEren = sceneBoundingRect();
+    QRectF limitesEren = mapRectToScene(rect());
     limitesEren.translate(desplazamientoX,0);
 
     for (QGraphicsRectItem* columna : columnas) {
         if (!columna)
             continue;
 
-        if (limitesEren.intersects(columna->sceneBoundingRect())) {
+        const QRectF limitesColumna =
+            columna->mapRectToScene(columna->rect());
+
+        if (limitesEren.intersects(limitesColumna)) {
             nuevaX = pos().x();
             break;
         }
@@ -87,7 +90,7 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX,
 
     QList<QGraphicsItem*> posiblesColisiones = scene()->items(limitesEren, Qt::IntersectsItemBoundingRect);
 
-    QRectF limitesActuales = sceneBoundingRect();
+    QRectF limitesActuales = mapRectToScene(rect());
 
     for(QGraphicsItem* elemento:posiblesColisiones){
 
@@ -125,7 +128,7 @@ void Jugador::saltar()
         return;
 
     yInicial = pos().y();
-    velocidadYInicial = -300;
+    velocidadYInicial = -280;
 
     tiempo = 0;
     cambiarEstado(SALTANDO);
@@ -152,7 +155,8 @@ bool Jugador::comprobarAterrizaje(
         if (!superficie)
             continue;
 
-        QRectF limites = superficie->sceneBoundingRect();
+        const QRectF limites =
+            superficie->mapRectToScene(superficie->rect());
         qreal altura = limites.top();
         qreal alturaAnterior = altura;
 

@@ -14,56 +14,28 @@ Juego::Juego(QWidget *parent)
     jugador(new Jugador()),
     temporizador(new QTimer(this))
 {
-    setWindowTitle("Mi juego 2D");
+    setWindowTitle("Rebelion de los Comuneros");
     setFixedSize(816, 639);
 
-    escena->setSceneRect(0, 0, 800, 600);
     setScene(escena);
 
     setRenderHint(QPainter::Antialiasing);
     setBackgroundBrush(QBrush(QColor(28, 32, 45)));
 
-    escena->addRect(0, 560, 800, 40,
-                    QPen(Qt::NoPen),
-                    QBrush(QColor(65, 145, 90)));
-    plataformas.push_back(escena->addRect(400, 560-40, 180, 20,
-                                          QPen(Qt::NoPen),
-                                          QBrush(QColor(180, 130, 80))));
-    plataformaMovil = new PlataformaMovil(
-        250, 460,
-        120, 20,
-        60, 4
-        );
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    escena->addItem(plataformaMovil);
-
-    plataformas.push_back(plataformaMovil);
-
-    escena->addItem(jugador);
-    jugador->setPos(250,560-45);
+    construirNivel1();
+    actualizarCamara();
 
     setFocusPolicy(Qt::StrongFocus);
     setFocus();
 
-    connect(temporizador, &QTimer::timeout,this,&Juego::actualizarJuego);
+    connect(temporizador, &QTimer::timeout,
+            this, &Juego::actualizarJuego);
+
     reloj.start();
     temporizador->start(16);
-
-    Soldado* soldado = new Soldado(TipoSoldado::DISTANCIA);
-
-    soldado->setPos(100, 515);
-
-    scene()->addItem(soldado);
-
-    soldados.append(soldado);
-
-    Soldado* soldadoCuerpo = new Soldado(TipoSoldado::CUERPO_A_CUERPO);
-
-    soldadoCuerpo->setPos(400, 515);
-
-    scene()->addItem(soldadoCuerpo);
-
-    soldados.append(soldadoCuerpo);
 }
 
 void Juego::keyPressEvent(QKeyEvent *event)
@@ -274,4 +246,87 @@ void Juego::actualizarJuego()
             ++it;
         }
     }
+
+    actualizarCamara();
+}
+
+void Juego::construirNivel1()
+{
+    escena->setSceneRect(
+        0, 0, ANCHO_NIVEL1, ALTO_VISTA
+        );
+
+    crearPlataforma(
+        0, ALTURA_PISO,
+        ANCHO_NIVEL1, ALTO_VISTA - ALTURA_PISO
+        );
+
+    crearPlataforma(400, ALTURA_PISO - 30, 140, 20);
+
+    crearColumna(600, ALTURA_PISO - 30, 35, 30);
+
+    plataformaMovil = new PlataformaMovil(
+        250, 460,
+        120, 20,
+        60, 4
+        );
+
+    escena->addItem(plataformaMovil);
+    plataformas.push_back(plataformaMovil);
+
+    escena->addItem(jugador);
+    jugador->setPos(50, ALTURA_PISO - 45);
+
+    crearSoldado(
+        TipoSoldado::CUERPO_A_CUERPO,
+        30, ALTURA_PISO - 45
+        );
+
+    crearSoldado(
+        TipoSoldado::DISTANCIA,
+        900, ALTURA_PISO - 45
+        );
+}
+
+void Juego::actualizarCamara()
+{
+    centerOn(
+        jugador->sceneBoundingRect().center().x(),
+        ALTO_VISTA / 2.0
+        );
+}
+
+void Juego::crearSoldado(TipoSoldado tipo, qreal x, qreal y)
+{
+    Soldado* soldado = new Soldado(tipo);
+
+    soldado->setPos(x, y);
+    soldado->establecerColumnasEscenario(columnas);
+
+    escena->addItem(soldado);
+    soldados.append(soldado);
+}
+
+void Juego::crearPlataforma(qreal x, qreal y,
+                            qreal ancho, qreal alto)
+{
+    plataformas.push_back(
+        escena->addRect(
+            x, y, ancho, alto,
+            QPen(Qt::NoPen),
+            QBrush(QColor(180, 130, 80))
+            )
+        );
+}
+
+void Juego::crearColumna(qreal x, qreal y,
+                         qreal ancho, qreal alto)
+{
+    columnas.push_back(
+        escena->addRect(
+            x, y, ancho, alto,
+            QPen(Qt::NoPen),
+            QBrush(QColor(130, 130, 130))
+            )
+        );
 }
