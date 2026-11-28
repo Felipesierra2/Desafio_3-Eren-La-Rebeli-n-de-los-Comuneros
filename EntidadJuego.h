@@ -23,6 +23,8 @@ public:
 
     int obtenerVida() const;
 
+    QRectF obtenerCuerpoFisico() const;
+
 protected:
     int vida;
     qreal velocidadRetrocesoX;

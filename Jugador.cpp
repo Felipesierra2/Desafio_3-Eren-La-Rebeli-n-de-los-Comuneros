@@ -21,13 +21,6 @@ Jugador::Jugador(QGraphicsItem *parent)
 
     setBrush(QBrush(QColor(80, 170, 255)));
     setPen(QPen(Qt::white, 2));
-
-    visualAtaque = new QGraphicsRectItem(this);
-
-    visualAtaque->setRect(0, 0, 45, 35);
-    visualAtaque->setBrush(QColor(255, 0, 0, 100));
-    visualAtaque->setPen(Qt::NoPen);
-    visualAtaque->setVisible(false);
 }
 
 void Jugador::establecerPlataformas(
@@ -50,6 +43,9 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX,
 
     if (vida <= 0)
         desplazamientoX = 0;
+
+    const bool intentaCaminar = desplazamientoX != 0;
+    const qreal xAnterior = pos().x();
 
     if (desplazamientoX > 0)
         mirandoDerecha = true;
@@ -126,6 +122,17 @@ void Jugador::movimientoHorizontal(qreal desplazamientoX,
     nuevaX = qBound(limites.left(), nuevaX, maxX);
 
     setX(nuevaX);
+
+    if (estaEnElSuelo())
+    {
+        const bool seDesplazo =
+            qAbs(nuevaX - xAnterior) > 0.001;
+
+        if (intentaCaminar && seDesplazo)
+            cambiarEstado(CAMINANDO);
+        else
+            cambiarEstado(QUIETO);
+    }
 }
 
 void Jugador::saltar()
@@ -294,12 +301,17 @@ void Jugador::actualizarMovimiento(qreal deltaTiempo){
     }
 
     if (estaEnElSuelo()) {
-        if (plataformaActual != nullptr) {
-            QRectF limitesPlataforma =
-                plataformaActual->sceneBoundingRect();
 
-            qreal izquierdaEren = sceneBoundingRect().left();
-            qreal derechaEren = sceneBoundingRect().right();
+        if (plataformaActual != nullptr) {
+
+            const QRectF limitesPlataforma =
+                plataformaActual->mapRectToScene(
+                    plataformaActual->rect());
+
+            const QRectF cuerpo = obtenerCuerpoFisico();
+
+            const qreal izquierdaEren = cuerpo.left();
+            const qreal derechaEren = cuerpo.right();
 
             bool sigueSobrePlataforma = derechaEren > limitesPlataforma.left() && izquierdaEren < limitesPlataforma.right();
 
@@ -334,28 +346,24 @@ QRectF Jugador::calcularAreaAtaque() const
     const qreal anchoAtaque = 45;
     const qreal altoAtaque = 35;
 
-    qreal xAtaque;
+    const QRectF cuerpo = mapRectToScene(rect());
 
-    if (mirandoDerecha)
-        xAtaque = sceneBoundingRect().right();
-    else
-        xAtaque = sceneBoundingRect().left() - anchoAtaque;
+    const qreal xAtaque = mirandoDerecha
+                              ? cuerpo.right()
+                              : cuerpo.left() - anchoAtaque;
 
-    qreal yAtaque = sceneBoundingRect().center().y() - altoAtaque / 2;
+    const qreal yAtaque =
+        cuerpo.center().y() - altoAtaque / 2;
 
-    return QRectF(xAtaque, yAtaque,
-                  anchoAtaque, altoAtaque);
+    return QRectF(
+        xAtaque, yAtaque,
+        anchoAtaque, altoAtaque
+        );
 }
 
-bool Jugador::hayImpacto(QGraphicsItem *objetivo) const
+QRectF Jugador::obtenerCuerpoFisico() const
 {
-    if (objetivo == nullptr)
-        return false;
-
-    QRectF areaAtaque = calcularAreaAtaque();
-    QRectF limitesObjetivo = objetivo->sceneBoundingRect();
-
-    return areaAtaque.intersects(limitesObjetivo);
+    return mapRectToScene(rect());
 }
 
 void Jugador::actualizarAtaque(qreal deltaTiempo)
@@ -365,52 +373,49 @@ void Jugador::actualizarAtaque(qreal deltaTiempo)
 
     tiempoAtaque += deltaTiempo;
 
-    if (tiempoAtaque >= DURACION_ATAQUE) {
+    if (tiempoAtaque >= DURACION_ATAQUE)
+    {
         atacando = false;
         tiempoAtaque = 0;
-        visualAtaque->setVisible(false);
         return;
     }
 
     if (tiempoAtaque < INICIO_IMPACTO ||
         tiempoAtaque >= FIN_IMPACTO)
     {
-        visualAtaque->setVisible(false);
         return;
     }
 
-    QRectF areaAtaque = calcularAreaAtaque();
+    const QRectF areaAtaque = calcularAreaAtaque();
 
-    QList<QGraphicsItem*> elementos = scene()->items(areaAtaque, Qt::IntersectsItemBoundingRect);
+    QList<QGraphicsItem*> elementos =
+        scene()->items(areaAtaque,
+                       Qt::IntersectsItemBoundingRect);
 
-    for(QGraphicsItem* elemento: elementos){
+    for (QGraphicsItem* elemento : elementos)
+    {
+        Soldado* soldado =
+            dynamic_cast<Soldado*>(elemento);
 
-        Soldado* soldado = dynamic_cast<Soldado*>(elemento);
-
-        if(!soldado)
+        if (!soldado)
             continue;
 
-        if(soldadosGolpeados.contains(soldado))
+        if (soldadosGolpeados.contains(soldado))
             continue;
 
-        QRectF cuerpoSoldado = soldado->mapRectToScene(soldado->rect());
+        const QRectF cuerpoSoldado =
+            soldado->mapRectToScene(soldado->rect());
 
         if (!areaAtaque.intersects(cuerpoSoldado))
             continue;
 
-        qreal impulso = mirandoDerecha ? 300:-300;
+        const qreal impulso =
+            mirandoDerecha ? 300 : -300;
 
-        soldado->recibirDano(1,impulso);
+        soldado->recibirDano(1, impulso);
 
         soldadosGolpeados.append(soldado);
     }
-
-    visualAtaque->setPos(
-        mirandoDerecha ? rect().width() : -45,
-        rect().height() / 2 - 35 / 2
-        );
-
-    visualAtaque->setVisible(true);
 }
 
 void Jugador::desaparecerSoldado(Soldado* soldado)
@@ -435,7 +440,6 @@ void Jugador::recibirDano(int cantidad, qreal direccion)
 
         atacando = false;
         tiempoAtaque = 0;
-        visualAtaque->setVisible(false);
     }
 
     tiempoInvulnerabilidad = DURACION_INVULNERABILIDAD;
@@ -476,7 +480,7 @@ void Jugador::paint(
         painter->scale(-1, 1);
     }
 
-    const qreal lado = qMin(rect().width(), rect().height());
+    const qreal lado = rect().height();
 
     const QRectF destino(
         rect().center().x() - lado / 2,
@@ -488,6 +492,21 @@ void Jugador::paint(
     painter->drawPixmap(destino, hojaSprites, origen);
 
     painter->restore();
+}
+
+QRectF Jugador::boundingRect() const
+{
+    const qreal lado = rect().height();
+
+    const QRectF limitesSprite(
+        rect().center().x() - lado / 2,
+        rect().bottom() - lado,
+        lado,
+        lado
+        );
+
+    return QGraphicsRectItem::boundingRect()
+        .united(limitesSprite);
 }
 
 void Jugador::actualizarAnimacion(qreal deltaTiempo)
@@ -611,12 +630,15 @@ void Jugador::actualizarAnimacion(qreal deltaTiempo)
         return;
     }
 
-    constexpr qreal DURACION_FOTOGRAMA = 0.25;
+    const qreal duracionFotograma =
+        animacionActual == AnimacionJugador::CORRER
+                        ? 0.10
+                        : 0.25;;
 
     tiempoAnimacion += deltaTiempo;
 
-    if (tiempoAnimacion >= DURACION_FOTOGRAMA) {
-        tiempoAnimacion -= DURACION_FOTOGRAMA;
+    if (tiempoAnimacion >= duracionFotograma) {
+        tiempoAnimacion -= duracionFotograma;
 
         fotogramaActual =
             (fotogramaActual + 1) % FOTOGRAMAS_POR_FILA;

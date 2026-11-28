@@ -7,6 +7,7 @@
 #include <QKeyEvent>
 #include <QTimer>
 #include <QtMath>
+#include <QSizePolicy>
 
 Juego::Juego(QWidget *parent)
     : QGraphicsView(parent),
@@ -15,9 +16,11 @@ Juego::Juego(QWidget *parent)
     temporizador(new QTimer(this))
 {
     setWindowTitle("Rebelion de los Comuneros");
-    setFixedSize(816, 639);
+    setSizePolicy(QSizePolicy::Expanding,
+                  QSizePolicy::Expanding);
 
     setScene(escena);
+    scale(2.0, 2.0);
 
     setRenderHint(QPainter::Antialiasing);
     setBackgroundBrush(QBrush(QColor(28, 32, 45)));
@@ -125,6 +128,9 @@ void Juego::actualizarJuego()
 
     for (Soldado* soldado : std::as_const(soldados))
     {
+        if (soldado->estaDerrotado())
+            continue;
+
         soldado->actualizarEstado(deltaTiempo, jugador);
 
         Proyectil* nuevoProyectil = soldado->recogerProyectil();
@@ -137,20 +143,6 @@ void Juego::actualizarJuego()
         soldado->actualizarPersecucion(deltaTiempo, jugador);
 
         soldado->actualizarAnimacion(deltaTiempo);
-
-        QRectF limitesEren = jugador->sceneBoundingRect();
-        QRectF enemigo = soldado->mapRectToScene(soldado->rect());
-
-        limitesEren.adjust(-4, 0, 4, 0);
-
-        if (limitesEren.intersects(enemigo))
-        {
-            qreal direccionRetroceso =
-                jugador->sceneBoundingRect().center().x() <
-                        enemigo.center().x() ? -1 : 1;
-
-            jugador->recibirDano(1, direccionRetroceso);
-        }
     }
 
     for (auto it = soldados.begin(); it != soldados.end(); ){
@@ -216,7 +208,8 @@ void Juego::actualizarJuego()
 
         QRectF limitesEscena = escena->sceneRect();
 
-        QRectF limitesEren = jugador->sceneBoundingRect();
+        const QRectF limitesEren =
+            jugador->obtenerCuerpoFisico();
 
         if (limitesProyectil.intersects(limitesEren))
         {
@@ -259,41 +252,58 @@ void Juego::construirNivel1()
         ANCHO_NIVEL1, ALTO_VISTA - ALTURA_PISO
         );
 
-    crearPlataforma(400, ALTURA_PISO - 30, 140, 20);
-
-    crearColumna(600, ALTURA_PISO - 30, 35, 30);
-
-    plataformaMovil = new PlataformaMovil(
-        250, 460,
-        120, 20,
-        60, 4
-        );
-
-    escena->addItem(plataformaMovil);
-    plataformas.push_back(plataformaMovil);
+    construirZonaSocorro();
+    construirZonaResistencia();
+    construirZonaObstaculos();
+    construirZonaEncuentro();
 
     escena->addItem(jugador);
     jugador->setPos(50, ALTURA_PISO - 45);
 
     jugador->establecerColumnas(columnas);
     jugador->establecerPlataformas(plataformas);
+}
+
+void Juego::construirZonaSocorro()
+{
+    crearColumna(350, ALTURA_PISO - 30, 35, 30);
 
     crearSoldado(
         TipoSoldado::CUERPO_A_CUERPO,
-        30, ALTURA_PISO - 45
+        260, ALTURA_PISO - 45
+        );
+
+    crearSoldado(
+        TipoSoldado::CUERPO_A_CUERPO,
+        650, ALTURA_PISO - 45
         );
 
     crearSoldado(
         TipoSoldado::DISTANCIA,
-        900, ALTURA_PISO - 45
+        400, ALTURA_PISO - 45
         );
+}
+
+void Juego::construirZonaResistencia()
+{
+}
+
+void Juego::construirZonaObstaculos()
+{
+}
+
+void Juego::construirZonaEncuentro()
+{
 }
 
 void Juego::actualizarCamara()
 {
+    const qreal alturaVisible =
+        viewport()->height() / transform().m22();
+
     centerOn(
         jugador->sceneBoundingRect().center().x(),
-        ALTO_VISTA / 2.0
+        ALTO_VISTA - alturaVisible / 2.0
         );
 }
 

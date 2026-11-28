@@ -165,3 +165,8 @@ bool EntidadJuego::estaEnRetroceso() const
 {
     return qAbs(velocidadRetrocesoX) >= 0.1;
 }
+
+QRectF EntidadJuego::obtenerCuerpoFisico() const
+{
+    return mapRectToScene(rect());
+}

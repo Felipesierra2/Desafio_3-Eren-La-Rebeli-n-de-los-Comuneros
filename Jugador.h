@@ -45,7 +45,6 @@ private:
     qreal yInicial = 0;
     qreal tiempo = 0;
     QGraphicsRectItem *plataformaActual = nullptr;
-    QGraphicsRectItem *visualAtaque = nullptr;
     QRectF calcularAreaAtaque() const;
     QVector<Soldado*> soldadosGolpeados;
 
@@ -66,7 +65,6 @@ private:
     bool estaEnElAire() const;
     bool estaEnElSuelo() const;
 
-    bool hayImpacto(QGraphicsItem *objetivo) const;
     bool atacando = false;
     qreal tiempoAtaque = 0;
     static constexpr qreal DURACION_ATAQUE = 0.30;
@@ -105,6 +103,8 @@ public:
 
     void recibirDano(int cantidad, qreal direccion);
     int obtenerVida() const;
+    QRectF obtenerCuerpoFisico() const;
+    QRectF boundingRect() const override;
 };
 
 

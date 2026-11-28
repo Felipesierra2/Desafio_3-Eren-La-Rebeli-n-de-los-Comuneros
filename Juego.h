@@ -28,6 +28,11 @@ private:
     void actualizarJuego();
 
     void construirNivel1();
+    void construirZonaSocorro();
+    void construirZonaResistencia();
+    void construirZonaObstaculos();
+    void construirZonaEncuentro();
+
     void actualizarCamara();
     void crearSoldado(TipoSoldado tipo, qreal x, qreal y);
     void crearPlataforma(qreal x, qreal y,

@@ -43,10 +43,8 @@ void Soldado::detectarJugador(const Jugador* jugador)
         return;
     }
 
-    qreal distancia = qAbs(
-        sceneBoundingRect().center().x() -
-        jugador->sceneBoundingRect().center().x()
-        );
+    const qreal distancia =
+        calcularDistanciaJugador(jugador);
 
     jugadorDetectado = distancia <= rangoDeteccion;
 }
@@ -82,10 +80,8 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
             return;
         }
 
-        qreal distancia = qAbs(
-            sceneBoundingRect().center().x() -
-            jugador->sceneBoundingRect().center().x()
-            );
+        const qreal distancia =
+            calcularDistanciaJugador(jugador);
 
         if (tipo == TipoSoldado::DISTANCIA &&
             distancia < distanciaMinima)
@@ -128,10 +124,8 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
 
     if (estado == EstadoSoldado::RETROCEDIENDO)
     {
-        qreal distancia = qAbs(
-            sceneBoundingRect().center().x() -
-            jugador->sceneBoundingRect().center().x()
-            );
+        const qreal distancia =
+            calcularDistanciaJugador(jugador);
 
         if (distancia >= 130)
         {
@@ -147,10 +141,8 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
             return;
         }
 
-        qreal distancia = qAbs(
-            sceneBoundingRect().center().x() -
-            jugador->sceneBoundingRect().center().x()
-            );
+        const qreal distancia =
+            calcularDistanciaJugador(jugador);
 
         if (distancia <= rangoAtaque) {
             qDebug() << "Soldado entra en rango de ataque";
@@ -255,26 +247,27 @@ void Soldado::recibirDano(int cantidad, qreal impulsoX)
     tiempoReaccionDano = 0.25;
 }
 
-void Soldado::atacarCuerpoACuerpo(Jugador *jugador)
+void Soldado::atacarCuerpoACuerpo(Jugador* jugador)
 {
     if (!jugador)
         return;
 
-    QRectF limitesSoldado = sceneBoundingRect();
-    QRectF limitesEren = jugador->sceneBoundingRect();
+    const QRectF limitesSoldado = obtenerCuerpoFisico();
+    const QRectF limitesEren = jugador->obtenerCuerpoFisico();
 
-    qreal distanciaX = qAbs(
+    const qreal distanciaX = qAbs(
         limitesSoldado.center().x() -
         limitesEren.center().x()
         );
 
-    bool estaAlAlcance =
+    const bool estaAlAlcance =
         distanciaX <= alcanceGolpe &&
         limitesSoldado.top() < limitesEren.bottom() &&
         limitesSoldado.bottom() > limitesEren.top();
 
-    if (estaAlAlcance) {
-        qreal direccionRetroceso =
+    if (estaAlAlcance)
+    {
+        const qreal direccionRetroceso =
             limitesEren.center().x() >
                     limitesSoldado.center().x() ? 1 : -1;
 
@@ -289,7 +282,7 @@ Proyectil* Soldado::atacarDistancia()
 
     Proyectil* proyectil = new Proyectil(direccionVisual);
 
-    QRectF limitesSoldado = sceneBoundingRect();
+    const QRectF limitesSoldado = obtenerCuerpoFisico();
 
     qreal posicionX;
 
@@ -314,14 +307,15 @@ Proyectil* Soldado::recogerProyectil()
     return proyectil;
 }
 
-qreal Soldado::obtenerDireccionJugador(const Jugador* jugador) const
+qreal Soldado::obtenerDireccionJugador(
+    const Jugador* jugador) const
 {
     if (!jugador)
         return 0;
 
-    qreal diferencia =
-        jugador->sceneBoundingRect().center().x() -
-        mapRectToScene(rect()).center().x();
+    const qreal diferencia =
+        jugador->obtenerCuerpoFisico().center().x() -
+        obtenerCuerpoFisico().center().x();
 
     if (diferencia > 0)
         return 1;
@@ -403,4 +397,13 @@ QPainterPath Soldado::shape() const
     camino.addRect(rect());
 
     return camino;
+}
+
+qreal Soldado::calcularDistanciaJugador(
+    const Jugador* jugador) const
+{
+    return qAbs(
+        obtenerCuerpoFisico().center().x() -
+        jugador->obtenerCuerpoFisico().center().x()
+        );
 }

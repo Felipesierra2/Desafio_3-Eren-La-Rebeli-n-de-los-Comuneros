@@ -60,6 +60,9 @@ private:
 
     void atacarCuerpoACuerpo(Jugador *jugador);
 
+    qreal calcularDistanciaJugador(
+        const Jugador* jugador) const;
+
 public:
     Soldado(TipoSoldado tipoSoldado);
 
