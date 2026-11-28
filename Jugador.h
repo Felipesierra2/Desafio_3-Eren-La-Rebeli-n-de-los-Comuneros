@@ -64,8 +64,9 @@ private:
 
     bool estaEnElAire() const;
     bool estaEnElSuelo() const;
-
     bool atacando = false;
+    bool invulnerable = false;
+
     qreal tiempoAtaque = 0;
     static constexpr qreal DURACION_ATAQUE = 0.30;
     static constexpr qreal INICIO_IMPACTO = 0.20;
@@ -76,7 +77,7 @@ private:
 
     int vida = 5;
     static constexpr int VIDA_MAXIMA = 5;
-    bool invulnerable = false;
+
     qreal tiempoInvulnerabilidad = 0;
     static constexpr qreal DURACION_INVULNERABILIDAD = 1.0;
     qreal velocidadRetroceso = 0;
@@ -103,8 +104,12 @@ public:
 
     void recibirDano(int cantidad, qreal direccion);
     int obtenerVida() const;
+    bool estaDerrotado() const;
+    bool animacionMuerteFinalizada() const;
+
     QRectF obtenerCuerpoFisico() const;
     QRectF boundingRect() const override;
+
 };
 
 

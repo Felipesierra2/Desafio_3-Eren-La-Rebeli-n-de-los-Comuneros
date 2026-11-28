@@ -60,11 +60,14 @@ private:
 
     void atacarCuerpoACuerpo(Jugador *jugador);
 
+    Proyectil* atacarDistancia();
+
     qreal calcularDistanciaJugador(
         const Jugador* jugador) const;
 
 public:
     Soldado(TipoSoldado tipoSoldado);
+    ~Soldado() override;
 
     void detectarJugador(const Jugador* jugador);
     void actualizarEstado(qreal deltaTiempo, Jugador* jugador);
@@ -81,7 +84,6 @@ public:
     void actualizarPersecucion(qreal deltaTiempo, const Jugador* jugador);
     void paint(QPainter *painter,const QStyleOptionGraphicsItem *option,QWidget *widget = nullptr) override;
 
-    Proyectil* atacarDistancia();
     Proyectil* recogerProyectil();
 };
 

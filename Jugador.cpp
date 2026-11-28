@@ -494,8 +494,7 @@ void Jugador::paint(
     painter->restore();
 }
 
-QRectF Jugador::boundingRect() const
-{
+QRectF Jugador::boundingRect() const{
     const qreal lado = rect().height();
 
     const QRectF limitesSprite(
@@ -521,10 +520,16 @@ void Jugador::actualizarAnimacion(qreal deltaTiempo)
             return;
         }
 
-        if (fotogramaActual == FOTOGRAMAS_POR_FILA - 1)
-            return;
-
         tiempoAnimacion += deltaTiempo;
+
+        if (fotogramaActual == FOTOGRAMAS_POR_FILA - 1) {
+            tiempoAnimacion = qMin(
+                tiempoAnimacion,
+                DURACION_FOTOGRAMA_MUERTE
+                );
+
+            return;
+        }
 
         if (tiempoAnimacion >= DURACION_FOTOGRAMA_MUERTE) {
             tiempoAnimacion -= DURACION_FOTOGRAMA_MUERTE;
@@ -645,4 +650,17 @@ void Jugador::actualizarAnimacion(qreal deltaTiempo)
 
         update();
     }
+}
+
+bool Jugador::estaDerrotado() const
+{
+    return vida <= 0;
+}
+
+bool Jugador::animacionMuerteFinalizada() const
+{
+    return estaDerrotado() &&
+           animacionActual == AnimacionJugador::MORIR &&
+           fotogramaActual == FOTOGRAMAS_POR_FILA - 1 &&
+           tiempoAnimacion >= DURACION_FOTOGRAMA_MUERTE;
 }

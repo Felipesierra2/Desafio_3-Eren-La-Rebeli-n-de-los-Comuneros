@@ -43,18 +43,22 @@ private:
                       qreal ancho, qreal alto);
     void interactuarConGalan();
     void completarNivel();
+    void gestionarDerrota();
+    void limpiarNivel();
+    void reiniciarNivel();
 
     bool izquierdaPresionada = false;
     bool derechaPresionada = false;
     bool jugadorCercaDeGalan() const;
     bool nivelCompletado = false;
+    bool partidaTerminada = false;
 
     QElapsedTimer reloj;
     QGraphicsScene *escena;
     std::vector<QGraphicsRectItem*> plataformas;
     std::vector<QGraphicsRectItem*> columnas;
     PlataformaMovil* plataformaMovil = nullptr;
-    Jugador *jugador;
+    Jugador *jugador = nullptr;
     QVector<Soldado*> soldados;
     QTimer *temporizador;
     std::vector<Proyectil*> proyectiles;

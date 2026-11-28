@@ -36,6 +36,11 @@ Soldado::Soldado(TipoSoldado tipoSoldado)
     }
 }
 
+Soldado::~Soldado()
+{
+    delete proyectilPendiente;
+}
+
 void Soldado::detectarJugador(const Jugador* jugador)
 {
     if (!jugador || estaDerrotado()) {
@@ -112,7 +117,8 @@ void Soldado::actualizarEstado(qreal deltaTiempo, Jugador *jugador)
             }
 
             else if (tipo == TipoSoldado::DISTANCIA) {
-                proyectilPendiente = atacarDistancia();
+                if (!proyectilPendiente)
+                    proyectilPendiente = atacarDistancia();
             }
 
             tiempoAtaque = tiempoEntreAtaques;

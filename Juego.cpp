@@ -11,11 +11,11 @@
 #include <QSizePolicy>
 #include <QDebug>
 #include <QMessageBox>
+#include <QPushButton>
 
 Juego::Juego(QWidget *parent)
     : QGraphicsView(parent),
     escena(new QGraphicsScene(this)),
-    jugador(new Jugador()),
     temporizador(new QTimer(this))
 {
     setWindowTitle("Rebelion de los Comuneros");
@@ -68,6 +68,14 @@ void Juego::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_Space:
+        if (partidaTerminada ||
+            nivelCompletado ||
+            jugador->estaDerrotado())
+        {
+            event->accept();
+            return;
+        }
+
         if (!event->isAutoRepeat())
             jugador->atacar();
         break;
@@ -247,6 +255,12 @@ void Juego::actualizarJuego()
         }
     }
 
+    if (jugador->animacionMuerteFinalizada())
+    {
+        gestionarDerrota();
+        return;
+    }
+
     actualizarCamara();
 }
 
@@ -265,6 +279,8 @@ void Juego::construirNivel1()
     construirZonaResistencia();
     construirZonaObstaculos();
     construirZonaEncuentro();
+
+    jugador = new Jugador();
 
     escena->addItem(jugador);
     jugador->setPos(50, ALTURA_PISO - 45);
@@ -410,7 +426,7 @@ bool Juego::jugadorCercaDeGalan() const{
 void Juego::interactuarConGalan()
 {
     if (nivelCompletado ||
-        !jugadorCercaDeGalan())
+        !jugadorCercaDeGalan() || jugador->estaDerrotado())
         return;
 
     temporizador->stop();
@@ -445,4 +461,83 @@ void Juego::completarNivel()
         "Has conseguido reunirte con José Antonio Galán.\n\n"
         "Próximo destino: Zipaquirá."
         );
+}
+
+void Juego::gestionarDerrota()
+{
+    if (partidaTerminada || nivelCompletado)
+        return;
+
+    partidaTerminada = true;
+
+    temporizador->stop();
+
+    izquierdaPresionada = false;
+    derechaPresionada = false;
+
+    QMessageBox mensaje(this);
+
+    mensaje.setWindowTitle("Has sido derrotado");
+
+    mensaje.setText(
+        "Eren ha caído en combate.\n\n"
+        "La lucha por la libertad aún no termina."
+        );
+
+    QPushButton* botonReintentar = mensaje.addButton(
+        "Reintentar",
+        QMessageBox::AcceptRole
+        );
+
+    mensaje.addButton(
+        "Salir",
+        QMessageBox::RejectRole
+        );
+
+    mensaje.setDefaultButton(botonReintentar);
+
+    mensaje.exec();
+
+    if (mensaje.clickedButton() == botonReintentar) {
+        reiniciarNivel();
+    }
+    else {
+        window()->close();
+    }
+}
+
+void Juego::limpiarNivel()
+{
+    temporizador->stop();
+
+    izquierdaPresionada = false;
+    derechaPresionada = false;
+
+    escena->clear();
+
+    soldados.clear();
+    proyectiles.clear();
+    plataformas.clear();
+    columnas.clear();
+
+    jugador = nullptr;
+    plataformaMovil = nullptr;
+    galan = nullptr;
+}
+
+void Juego::reiniciarNivel()
+{
+    limpiarNivel();
+
+    nivelCompletado = false;
+    partidaTerminada = false;
+
+    construirNivel1();
+
+    actualizarCamara();
+
+    setFocus();
+
+    reloj.restart();
+    temporizador->start();
 }
