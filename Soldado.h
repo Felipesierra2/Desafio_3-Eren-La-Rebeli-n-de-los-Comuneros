@@ -29,7 +29,7 @@ class Soldado : public EntidadJuego
 {
 private:
     QPixmap hojaSprites;
-    static constexpr int VIDA_INICIAL = 5;
+    static constexpr int VIDA_INICIAL = 3;
 
     TipoSoldado tipo;
     EstadoSoldado estado = EstadoSoldado::VIGILANDO;

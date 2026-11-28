@@ -2,12 +2,15 @@
 #include "Jugador.h"
 #include "Proyectil.h"
 #include "Soldado.h"
+#include "PersonajeNoJugable.h"
 
 #include <QGraphicsScene>
 #include <QKeyEvent>
 #include <QTimer>
 #include <QtMath>
 #include <QSizePolicy>
+#include <QDebug>
+#include <QMessageBox>
 
 Juego::Juego(QWidget *parent)
     : QGraphicsView(parent),
@@ -67,6 +70,12 @@ void Juego::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Space:
         if (!event->isAutoRepeat())
             jugador->atacar();
+        break;
+
+    case Qt::Key_E:
+        if (!event->isAutoRepeat())
+            interactuarConGalan();
+
         break;
 
     default:
@@ -274,26 +283,59 @@ void Juego::construirZonaSocorro()
         );
 
     crearSoldado(
-        TipoSoldado::CUERPO_A_CUERPO,
-        650, ALTURA_PISO - 45
-        );
-
-    crearSoldado(
         TipoSoldado::DISTANCIA,
         400, ALTURA_PISO - 45
         );
 }
 
-void Juego::construirZonaResistencia()
-{
+void Juego::construirZonaResistencia(){
+    crearColumna(1050, ALTURA_PISO - 40, 40, 40);
+    crearColumna(1350, ALTURA_PISO - 30, 40, 30);
+
+    crearSoldado(
+        TipoSoldado::CUERPO_A_CUERPO,
+        950, ALTURA_PISO - 45);
+
+    crearSoldado(
+        TipoSoldado::DISTANCIA,
+        1240, ALTURA_PISO - 45);
+
+    crearSoldado(
+        TipoSoldado::CUERPO_A_CUERPO,
+        1500, ALTURA_PISO - 45);
 }
 
-void Juego::construirZonaObstaculos()
-{
+void Juego::construirZonaObstaculos(){
+    plataformaMovil = new PlataformaMovil(
+        1840, 490, 120, 20, 45, 2.0
+        );
+
+    escena->addItem(plataformaMovil);
+    plataformas.push_back(plataformaMovil);
+
+    crearColumna(2000, ALTURA_PISO - 140, 160, 140);
 }
 
-void Juego::construirZonaEncuentro()
-{
+void Juego::construirZonaEncuentro(){
+    crearColumna(2590, ALTURA_PISO - 35, 40, 35);
+
+    crearSoldado(
+        TipoSoldado::CUERPO_A_CUERPO,
+        2500, ALTURA_PISO - 45);
+
+    crearSoldado(
+        TipoSoldado::DISTANCIA,
+        2700, ALTURA_PISO - 45);
+
+    crearSoldado(
+        TipoSoldado::CUERPO_A_CUERPO,
+        2850, ALTURA_PISO - 45);
+
+    galan = new PersonajeNoJugable();
+
+    galan->setPos(3100, ALTURA_PISO - 45);
+
+    escena->addItem(galan);
 }
 
 void Juego::actualizarCamara()
@@ -339,5 +381,68 @@ void Juego::crearColumna(qreal x, qreal y,
             QPen(Qt::NoPen),
             QBrush(QColor(130, 130, 130))
             )
+        );
+}
+
+bool Juego::jugadorCercaDeGalan() const{
+    if (!jugador || !galan)
+        return false;
+
+    const QRectF cuerpoJugador = jugador->obtenerCuerpoFisico();
+    const QRectF cuerpoGalan = galan->mapRectToScene(galan->rect());
+
+    constexpr qreal RANGO_INTERACCION = 65.0;
+
+    const qreal distanciaX = qAbs(
+        cuerpoJugador.center().x() -
+        cuerpoGalan.center().x()
+        );
+
+    const bool solapamientoVertical =
+        cuerpoJugador.bottom() > cuerpoGalan.top() &&
+        cuerpoJugador.top() < cuerpoGalan.bottom();
+
+    return distanciaX <= RANGO_INTERACCION &&
+           solapamientoVertical;
+}
+
+
+void Juego::interactuarConGalan()
+{
+    if (nivelCompletado ||
+        !jugadorCercaDeGalan())
+        return;
+
+    temporizador->stop();
+
+    QMessageBox::information(
+        this,
+        "El encuentro con Galán",
+        "Eren: He venido a luchar por la libertad.\n\n"
+        "Galán: Nuestra lucha apenas comienza. "
+        "Debemos llegar a Zipaquirá."
+        );
+
+    completarNivel();
+}
+
+void Juego::completarNivel()
+{
+    if (nivelCompletado)
+        return;
+
+    nivelCompletado = true;
+
+    temporizador->stop();
+
+    izquierdaPresionada = false;
+    derechaPresionada = false;
+
+    QMessageBox::information(
+        this,
+        "Nivel completado",
+        "¡El grito de la libertad!\n\n"
+        "Has conseguido reunirte con José Antonio Galán.\n\n"
+        "Próximo destino: Zipaquirá."
         );
 }

@@ -14,6 +14,7 @@ class QTimer;
 class Jugador;
 class Soldado;
 class Proyectil;
+class PersonajeNoJugable;
 
 class Juego : public QGraphicsView
 {
@@ -40,9 +41,13 @@ private:
 
     void crearColumna(qreal x, qreal y,
                       qreal ancho, qreal alto);
+    void interactuarConGalan();
+    void completarNivel();
 
     bool izquierdaPresionada = false;
     bool derechaPresionada = false;
+    bool jugadorCercaDeGalan() const;
+    bool nivelCompletado = false;
 
     QElapsedTimer reloj;
     QGraphicsScene *escena;
@@ -53,6 +58,8 @@ private:
     QVector<Soldado*> soldados;
     QTimer *temporizador;
     std::vector<Proyectil*> proyectiles;
+
+    PersonajeNoJugable* galan = nullptr;
 
     static constexpr int ANCHO_VISTA = 800;
     static constexpr int ALTO_VISTA = 600;

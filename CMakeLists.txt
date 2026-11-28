@@ -25,7 +25,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         Jugador.h Jugador.cpp
         Juego.h Juego.cpp
-        AgenteSoldado.h AgenteSoldado.cpp
+
         EntidadJuego.h EntidadJuego.cpp
         Soldado.h Soldado.cpp
         README.md
@@ -33,6 +33,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         recursos.qrc
         Proyectil.h Proyectil.cpp
         PlataformaMovil.h PlataformaMovil.cpp
+        PersonajeNoJugable.h PersonajeNoJugable.cpp
 
 
 
